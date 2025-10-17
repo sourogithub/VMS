@@ -1,0 +1,23 @@
+/*
+ * ColorSpace.h
+ *
+ *  Created on: 30-Oct-2018
+ *      Author: dss-06
+ */
+
+#ifndef INCLUDE_COLORSPACE_H_
+#define INCLUDE_COLORSPACE_H_
+
+
+typedef enum _ColorSpace_
+{
+	RGB 						= 0,
+	CMYK						= 1,
+	CIE							= 2,
+	YUV 						= 3,
+	HSV 						= 4,
+	HSL 						= 5
+}ColorSpace;
+
+
+#endif /* INCLUDE_COLORSPACE_H_ */

@@ -1,0 +1,10 @@
+vms for Debian
+-------------
+
+<this file describes information about the source package, see Debian policy
+manual section 4.14. You WILL either need to modify or delete this file>
+
+#Added daemon module to monitor vms application UI 
+
+ -- Sibendu <dss-02@unknown>  Tue, 01 Oct 2019 20:26:00 +0530
+

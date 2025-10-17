@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=DSS Video Management System
+Comment=Video Management Release 2019
+Exec=/bin/sh run.sh
+Path=/usr/bin/vms
+# Terminal=false
+Icon=/usr/bin/vms/res/vms_icon.png

@@ -1,0 +1,346 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+CPP_SRCS += \
+../dlib-19.17/examples/3d_point_cloud_ex.cpp \
+../dlib-19.17/examples/assignment_learning_ex.cpp \
+../dlib-19.17/examples/bayes_net_ex.cpp \
+../dlib-19.17/examples/bayes_net_from_disk_ex.cpp \
+../dlib-19.17/examples/bayes_net_gui_ex.cpp \
+../dlib-19.17/examples/bridge_ex.cpp \
+../dlib-19.17/examples/bsp_ex.cpp \
+../dlib-19.17/examples/compress_stream_ex.cpp \
+../dlib-19.17/examples/config_reader_ex.cpp \
+../dlib-19.17/examples/custom_trainer_ex.cpp \
+../dlib-19.17/examples/dir_nav_ex.cpp \
+../dlib-19.17/examples/dnn_face_recognition_ex.cpp \
+../dlib-19.17/examples/dnn_imagenet_ex.cpp \
+../dlib-19.17/examples/dnn_imagenet_train_ex.cpp \
+../dlib-19.17/examples/dnn_inception_ex.cpp \
+../dlib-19.17/examples/dnn_introduction2_ex.cpp \
+../dlib-19.17/examples/dnn_introduction_ex.cpp \
+../dlib-19.17/examples/dnn_metric_learning_ex.cpp \
+../dlib-19.17/examples/dnn_metric_learning_on_images_ex.cpp \
+../dlib-19.17/examples/dnn_mmod_dog_hipsterizer.cpp \
+../dlib-19.17/examples/dnn_mmod_ex.cpp \
+../dlib-19.17/examples/dnn_mmod_face_detection_ex.cpp \
+../dlib-19.17/examples/dnn_mmod_find_cars2_ex.cpp \
+../dlib-19.17/examples/dnn_mmod_find_cars_ex.cpp \
+../dlib-19.17/examples/dnn_mmod_train_find_cars_ex.cpp \
+../dlib-19.17/examples/dnn_semantic_segmentation_ex.cpp \
+../dlib-19.17/examples/dnn_semantic_segmentation_train_ex.cpp \
+../dlib-19.17/examples/empirical_kernel_map_ex.cpp \
+../dlib-19.17/examples/face_detection_ex.cpp \
+../dlib-19.17/examples/face_from_webcam.cpp \
+../dlib-19.17/examples/face_landmark_detection_ex.cpp \
+../dlib-19.17/examples/fddb_dlib.cpp \
+../dlib-19.17/examples/fhog_ex.cpp \
+../dlib-19.17/examples/fhog_object_detector_ex.cpp \
+../dlib-19.17/examples/file_to_code_ex.cpp \
+../dlib-19.17/examples/generate_database.cpp \
+../dlib-19.17/examples/graph_labeling_ex.cpp \
+../dlib-19.17/examples/gui_api_ex.cpp \
+../dlib-19.17/examples/hough_transform_ex.cpp \
+../dlib-19.17/examples/image_ex.cpp \
+../dlib-19.17/examples/integrate_function_adapt_simp_ex.cpp \
+../dlib-19.17/examples/iosockstream_ex.cpp \
+../dlib-19.17/examples/kcentroid_ex.cpp \
+../dlib-19.17/examples/kkmeans_ex.cpp \
+../dlib-19.17/examples/krls_ex.cpp \
+../dlib-19.17/examples/krls_filter_ex.cpp \
+../dlib-19.17/examples/krr_classification_ex.cpp \
+../dlib-19.17/examples/krr_regression_ex.cpp \
+../dlib-19.17/examples/learning_to_track_ex.cpp \
+../dlib-19.17/examples/least_squares_ex.cpp \
+../dlib-19.17/examples/linear_manifold_regularizer_ex.cpp \
+../dlib-19.17/examples/logger_custom_output_ex.cpp \
+../dlib-19.17/examples/logger_ex.cpp \
+../dlib-19.17/examples/logger_ex_2.cpp \
+../dlib-19.17/examples/matrix_ex.cpp \
+../dlib-19.17/examples/matrix_expressions_ex.cpp \
+../dlib-19.17/examples/max_cost_assignment_ex.cpp \
+../dlib-19.17/examples/member_function_pointer_ex.cpp \
+../dlib-19.17/examples/mlp_ex.cpp \
+../dlib-19.17/examples/model_selection_ex.cpp \
+../dlib-19.17/examples/mpc_ex.cpp \
+../dlib-19.17/examples/multiclass_classification_ex.cpp \
+../dlib-19.17/examples/multithreaded_object_ex.cpp \
+../dlib-19.17/examples/object_detector_advanced_ex.cpp \
+../dlib-19.17/examples/object_detector_ex.cpp \
+../dlib-19.17/examples/one_class_classifiers_ex.cpp \
+../dlib-19.17/examples/optimization_ex.cpp \
+../dlib-19.17/examples/parallel_for_ex.cpp \
+../dlib-19.17/examples/pipe_ex.cpp \
+../dlib-19.17/examples/pipe_ex_2.cpp \
+../dlib-19.17/examples/quantum_computing_ex.cpp \
+../dlib-19.17/examples/queue_ex.cpp \
+../dlib-19.17/examples/random_cropper_ex\ (copy).cpp \
+../dlib-19.17/examples/random_cropper_ex.cpp \
+../dlib-19.17/examples/rank_features_ex.cpp \
+../dlib-19.17/examples/running_stats_ex.cpp \
+../dlib-19.17/examples/rvm_ex.cpp \
+../dlib-19.17/examples/rvm_regression_ex.cpp \
+../dlib-19.17/examples/sequence_labeler_ex.cpp \
+../dlib-19.17/examples/sequence_segmenter_ex.cpp \
+../dlib-19.17/examples/server_http_ex.cpp \
+../dlib-19.17/examples/server_iostream_ex.cpp \
+../dlib-19.17/examples/sockets_ex.cpp \
+../dlib-19.17/examples/sockstreambuf_ex.cpp \
+../dlib-19.17/examples/sqlite_ex.cpp \
+../dlib-19.17/examples/std_allocator_ex.cpp \
+../dlib-19.17/examples/surf_ex.cpp \
+../dlib-19.17/examples/svm_c_ex.cpp \
+../dlib-19.17/examples/svm_ex.cpp \
+../dlib-19.17/examples/svm_pegasos_ex.cpp \
+../dlib-19.17/examples/svm_rank_ex.cpp \
+../dlib-19.17/examples/svm_sparse_ex.cpp \
+../dlib-19.17/examples/svm_struct_ex.cpp \
+../dlib-19.17/examples/svr_ex.cpp \
+../dlib-19.17/examples/thread_function_ex.cpp \
+../dlib-19.17/examples/thread_pool_ex.cpp \
+../dlib-19.17/examples/threaded_object_ex.cpp \
+../dlib-19.17/examples/threads_ex.cpp \
+../dlib-19.17/examples/timer_ex.cpp \
+../dlib-19.17/examples/train_object_detector.cpp \
+../dlib-19.17/examples/train_shape_predictor_ex.cpp \
+../dlib-19.17/examples/trainning_data.cpp \
+../dlib-19.17/examples/using_custom_kernels_ex.cpp \
+../dlib-19.17/examples/video_tracking_ex.cpp \
+../dlib-19.17/examples/webcam_face_pose_ex.cpp \
+../dlib-19.17/examples/xml_parser_ex.cpp 
+
+OBJS += \
+./dlib-19.17/examples/3d_point_cloud_ex.o \
+./dlib-19.17/examples/assignment_learning_ex.o \
+./dlib-19.17/examples/bayes_net_ex.o \
+./dlib-19.17/examples/bayes_net_from_disk_ex.o \
+./dlib-19.17/examples/bayes_net_gui_ex.o \
+./dlib-19.17/examples/bridge_ex.o \
+./dlib-19.17/examples/bsp_ex.o \
+./dlib-19.17/examples/compress_stream_ex.o \
+./dlib-19.17/examples/config_reader_ex.o \
+./dlib-19.17/examples/custom_trainer_ex.o \
+./dlib-19.17/examples/dir_nav_ex.o \
+./dlib-19.17/examples/dnn_face_recognition_ex.o \
+./dlib-19.17/examples/dnn_imagenet_ex.o \
+./dlib-19.17/examples/dnn_imagenet_train_ex.o \
+./dlib-19.17/examples/dnn_inception_ex.o \
+./dlib-19.17/examples/dnn_introduction2_ex.o \
+./dlib-19.17/examples/dnn_introduction_ex.o \
+./dlib-19.17/examples/dnn_metric_learning_ex.o \
+./dlib-19.17/examples/dnn_metric_learning_on_images_ex.o \
+./dlib-19.17/examples/dnn_mmod_dog_hipsterizer.o \
+./dlib-19.17/examples/dnn_mmod_ex.o \
+./dlib-19.17/examples/dnn_mmod_face_detection_ex.o \
+./dlib-19.17/examples/dnn_mmod_find_cars2_ex.o \
+./dlib-19.17/examples/dnn_mmod_find_cars_ex.o \
+./dlib-19.17/examples/dnn_mmod_train_find_cars_ex.o \
+./dlib-19.17/examples/dnn_semantic_segmentation_ex.o \
+./dlib-19.17/examples/dnn_semantic_segmentation_train_ex.o \
+./dlib-19.17/examples/empirical_kernel_map_ex.o \
+./dlib-19.17/examples/face_detection_ex.o \
+./dlib-19.17/examples/face_from_webcam.o \
+./dlib-19.17/examples/face_landmark_detection_ex.o \
+./dlib-19.17/examples/fddb_dlib.o \
+./dlib-19.17/examples/fhog_ex.o \
+./dlib-19.17/examples/fhog_object_detector_ex.o \
+./dlib-19.17/examples/file_to_code_ex.o \
+./dlib-19.17/examples/generate_database.o \
+./dlib-19.17/examples/graph_labeling_ex.o \
+./dlib-19.17/examples/gui_api_ex.o \
+./dlib-19.17/examples/hough_transform_ex.o \
+./dlib-19.17/examples/image_ex.o \
+./dlib-19.17/examples/integrate_function_adapt_simp_ex.o \
+./dlib-19.17/examples/iosockstream_ex.o \
+./dlib-19.17/examples/kcentroid_ex.o \
+./dlib-19.17/examples/kkmeans_ex.o \
+./dlib-19.17/examples/krls_ex.o \
+./dlib-19.17/examples/krls_filter_ex.o \
+./dlib-19.17/examples/krr_classification_ex.o \
+./dlib-19.17/examples/krr_regression_ex.o \
+./dlib-19.17/examples/learning_to_track_ex.o \
+./dlib-19.17/examples/least_squares_ex.o \
+./dlib-19.17/examples/linear_manifold_regularizer_ex.o \
+./dlib-19.17/examples/logger_custom_output_ex.o \
+./dlib-19.17/examples/logger_ex.o \
+./dlib-19.17/examples/logger_ex_2.o \
+./dlib-19.17/examples/matrix_ex.o \
+./dlib-19.17/examples/matrix_expressions_ex.o \
+./dlib-19.17/examples/max_cost_assignment_ex.o \
+./dlib-19.17/examples/member_function_pointer_ex.o \
+./dlib-19.17/examples/mlp_ex.o \
+./dlib-19.17/examples/model_selection_ex.o \
+./dlib-19.17/examples/mpc_ex.o \
+./dlib-19.17/examples/multiclass_classification_ex.o \
+./dlib-19.17/examples/multithreaded_object_ex.o \
+./dlib-19.17/examples/object_detector_advanced_ex.o \
+./dlib-19.17/examples/object_detector_ex.o \
+./dlib-19.17/examples/one_class_classifiers_ex.o \
+./dlib-19.17/examples/optimization_ex.o \
+./dlib-19.17/examples/parallel_for_ex.o \
+./dlib-19.17/examples/pipe_ex.o \
+./dlib-19.17/examples/pipe_ex_2.o \
+./dlib-19.17/examples/quantum_computing_ex.o \
+./dlib-19.17/examples/queue_ex.o \
+./dlib-19.17/examples/random_cropper_ex\ (copy).o \
+./dlib-19.17/examples/random_cropper_ex.o \
+./dlib-19.17/examples/rank_features_ex.o \
+./dlib-19.17/examples/running_stats_ex.o \
+./dlib-19.17/examples/rvm_ex.o \
+./dlib-19.17/examples/rvm_regression_ex.o \
+./dlib-19.17/examples/sequence_labeler_ex.o \
+./dlib-19.17/examples/sequence_segmenter_ex.o \
+./dlib-19.17/examples/server_http_ex.o \
+./dlib-19.17/examples/server_iostream_ex.o \
+./dlib-19.17/examples/sockets_ex.o \
+./dlib-19.17/examples/sockstreambuf_ex.o \
+./dlib-19.17/examples/sqlite_ex.o \
+./dlib-19.17/examples/std_allocator_ex.o \
+./dlib-19.17/examples/surf_ex.o \
+./dlib-19.17/examples/svm_c_ex.o \
+./dlib-19.17/examples/svm_ex.o \
+./dlib-19.17/examples/svm_pegasos_ex.o \
+./dlib-19.17/examples/svm_rank_ex.o \
+./dlib-19.17/examples/svm_sparse_ex.o \
+./dlib-19.17/examples/svm_struct_ex.o \
+./dlib-19.17/examples/svr_ex.o \
+./dlib-19.17/examples/thread_function_ex.o \
+./dlib-19.17/examples/thread_pool_ex.o \
+./dlib-19.17/examples/threaded_object_ex.o \
+./dlib-19.17/examples/threads_ex.o \
+./dlib-19.17/examples/timer_ex.o \
+./dlib-19.17/examples/train_object_detector.o \
+./dlib-19.17/examples/train_shape_predictor_ex.o \
+./dlib-19.17/examples/trainning_data.o \
+./dlib-19.17/examples/using_custom_kernels_ex.o \
+./dlib-19.17/examples/video_tracking_ex.o \
+./dlib-19.17/examples/webcam_face_pose_ex.o \
+./dlib-19.17/examples/xml_parser_ex.o 
+
+CPP_DEPS += \
+./dlib-19.17/examples/3d_point_cloud_ex.d \
+./dlib-19.17/examples/assignment_learning_ex.d \
+./dlib-19.17/examples/bayes_net_ex.d \
+./dlib-19.17/examples/bayes_net_from_disk_ex.d \
+./dlib-19.17/examples/bayes_net_gui_ex.d \
+./dlib-19.17/examples/bridge_ex.d \
+./dlib-19.17/examples/bsp_ex.d \
+./dlib-19.17/examples/compress_stream_ex.d \
+./dlib-19.17/examples/config_reader_ex.d \
+./dlib-19.17/examples/custom_trainer_ex.d \
+./dlib-19.17/examples/dir_nav_ex.d \
+./dlib-19.17/examples/dnn_face_recognition_ex.d \
+./dlib-19.17/examples/dnn_imagenet_ex.d \
+./dlib-19.17/examples/dnn_imagenet_train_ex.d \
+./dlib-19.17/examples/dnn_inception_ex.d \
+./dlib-19.17/examples/dnn_introduction2_ex.d \
+./dlib-19.17/examples/dnn_introduction_ex.d \
+./dlib-19.17/examples/dnn_metric_learning_ex.d \
+./dlib-19.17/examples/dnn_metric_learning_on_images_ex.d \
+./dlib-19.17/examples/dnn_mmod_dog_hipsterizer.d \
+./dlib-19.17/examples/dnn_mmod_ex.d \
+./dlib-19.17/examples/dnn_mmod_face_detection_ex.d \
+./dlib-19.17/examples/dnn_mmod_find_cars2_ex.d \
+./dlib-19.17/examples/dnn_mmod_find_cars_ex.d \
+./dlib-19.17/examples/dnn_mmod_train_find_cars_ex.d \
+./dlib-19.17/examples/dnn_semantic_segmentation_ex.d \
+./dlib-19.17/examples/dnn_semantic_segmentation_train_ex.d \
+./dlib-19.17/examples/empirical_kernel_map_ex.d \
+./dlib-19.17/examples/face_detection_ex.d \
+./dlib-19.17/examples/face_from_webcam.d \
+./dlib-19.17/examples/face_landmark_detection_ex.d \
+./dlib-19.17/examples/fddb_dlib.d \
+./dlib-19.17/examples/fhog_ex.d \
+./dlib-19.17/examples/fhog_object_detector_ex.d \
+./dlib-19.17/examples/file_to_code_ex.d \
+./dlib-19.17/examples/generate_database.d \
+./dlib-19.17/examples/graph_labeling_ex.d \
+./dlib-19.17/examples/gui_api_ex.d \
+./dlib-19.17/examples/hough_transform_ex.d \
+./dlib-19.17/examples/image_ex.d \
+./dlib-19.17/examples/integrate_function_adapt_simp_ex.d \
+./dlib-19.17/examples/iosockstream_ex.d \
+./dlib-19.17/examples/kcentroid_ex.d \
+./dlib-19.17/examples/kkmeans_ex.d \
+./dlib-19.17/examples/krls_ex.d \
+./dlib-19.17/examples/krls_filter_ex.d \
+./dlib-19.17/examples/krr_classification_ex.d \
+./dlib-19.17/examples/krr_regression_ex.d \
+./dlib-19.17/examples/learning_to_track_ex.d \
+./dlib-19.17/examples/least_squares_ex.d \
+./dlib-19.17/examples/linear_manifold_regularizer_ex.d \
+./dlib-19.17/examples/logger_custom_output_ex.d \
+./dlib-19.17/examples/logger_ex.d \
+./dlib-19.17/examples/logger_ex_2.d \
+./dlib-19.17/examples/matrix_ex.d \
+./dlib-19.17/examples/matrix_expressions_ex.d \
+./dlib-19.17/examples/max_cost_assignment_ex.d \
+./dlib-19.17/examples/member_function_pointer_ex.d \
+./dlib-19.17/examples/mlp_ex.d \
+./dlib-19.17/examples/model_selection_ex.d \
+./dlib-19.17/examples/mpc_ex.d \
+./dlib-19.17/examples/multiclass_classification_ex.d \
+./dlib-19.17/examples/multithreaded_object_ex.d \
+./dlib-19.17/examples/object_detector_advanced_ex.d \
+./dlib-19.17/examples/object_detector_ex.d \
+./dlib-19.17/examples/one_class_classifiers_ex.d \
+./dlib-19.17/examples/optimization_ex.d \
+./dlib-19.17/examples/parallel_for_ex.d \
+./dlib-19.17/examples/pipe_ex.d \
+./dlib-19.17/examples/pipe_ex_2.d \
+./dlib-19.17/examples/quantum_computing_ex.d \
+./dlib-19.17/examples/queue_ex.d \
+./dlib-19.17/examples/random_cropper_ex\ (copy).d \
+./dlib-19.17/examples/random_cropper_ex.d \
+./dlib-19.17/examples/rank_features_ex.d \
+./dlib-19.17/examples/running_stats_ex.d \
+./dlib-19.17/examples/rvm_ex.d \
+./dlib-19.17/examples/rvm_regression_ex.d \
+./dlib-19.17/examples/sequence_labeler_ex.d \
+./dlib-19.17/examples/sequence_segmenter_ex.d \
+./dlib-19.17/examples/server_http_ex.d \
+./dlib-19.17/examples/server_iostream_ex.d \
+./dlib-19.17/examples/sockets_ex.d \
+./dlib-19.17/examples/sockstreambuf_ex.d \
+./dlib-19.17/examples/sqlite_ex.d \
+./dlib-19.17/examples/std_allocator_ex.d \
+./dlib-19.17/examples/surf_ex.d \
+./dlib-19.17/examples/svm_c_ex.d \
+./dlib-19.17/examples/svm_ex.d \
+./dlib-19.17/examples/svm_pegasos_ex.d \
+./dlib-19.17/examples/svm_rank_ex.d \
+./dlib-19.17/examples/svm_sparse_ex.d \
+./dlib-19.17/examples/svm_struct_ex.d \
+./dlib-19.17/examples/svr_ex.d \
+./dlib-19.17/examples/thread_function_ex.d \
+./dlib-19.17/examples/thread_pool_ex.d \
+./dlib-19.17/examples/threaded_object_ex.d \
+./dlib-19.17/examples/threads_ex.d \
+./dlib-19.17/examples/timer_ex.d \
+./dlib-19.17/examples/train_object_detector.d \
+./dlib-19.17/examples/train_shape_predictor_ex.d \
+./dlib-19.17/examples/trainning_data.d \
+./dlib-19.17/examples/using_custom_kernels_ex.d \
+./dlib-19.17/examples/video_tracking_ex.d \
+./dlib-19.17/examples/webcam_face_pose_ex.d \
+./dlib-19.17/examples/xml_parser_ex.d 
+
+
+# Each subdirectory must supply rules for building sources it contributes
+dlib-19.17/examples/%.o: ../dlib-19.17/examples/%.cpp
+	@echo 'Building file: $<'
+	@echo 'Invoking: GCC C++ Compiler'
+	g++ -std=c++0x -DDLIB_JPEG_SUPPORT -DDLIB_PNG_SUPPORT -I"/home/abc/eclipse-workspace/ProbeMaster/include" -I"/home/abc/eclipse-workspace/ProbeMaster/dlib-19.17/dlib/all" -Iusr/local/include/opencv2/core/ -I/usr/lib/jvm/java-8-oracle/include/ -I/usr/local/lib -I/usr/local/include -I/usr/local/include/opencv -I/usr/lib/jvm/java-8-oracle/include/linux/ -I/usr/lib/jvm/java-11-openjdk-amd64/include -O0 -g3 -Wall -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+dlib-19.17/examples/random_cropper_ex\ (copy).o: ../dlib-19.17/examples/random_cropper_ex\ (copy).cpp
+	@echo 'Building file: $<'
+	@echo 'Invoking: GCC C++ Compiler'
+	g++ -std=c++0x -DDLIB_JPEG_SUPPORT -DDLIB_PNG_SUPPORT -I"/home/abc/eclipse-workspace/ProbeMaster/include" -I"/home/abc/eclipse-workspace/ProbeMaster/dlib-19.17/dlib/all" -Iusr/local/include/opencv2/core/ -I/usr/lib/jvm/java-8-oracle/include/ -I/usr/local/lib -I/usr/local/include -I/usr/local/include/opencv -I/usr/lib/jvm/java-8-oracle/include/linux/ -I/usr/lib/jvm/java-11-openjdk-amd64/include -O0 -g3 -Wall -c -fmessage-length=0 -fPIC -MMD -MP -MF"dlib-19.17/examples/random_cropper_ex (copy).d" -MT"dlib-19.17/examples/random_cropper_ex\ (copy).d" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+

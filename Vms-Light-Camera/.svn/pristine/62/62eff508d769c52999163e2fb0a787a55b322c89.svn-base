@@ -1,0 +1,11 @@
+[Unit]
+Description=VMS Memory Management Service
+[Service]
+WorkingDirectory=/usr/bin/vms/
+ExecStart=/usr/bin/vms/service_start.sh
+ExitStatus=143
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=5
+[Install]
+WantedBy=multi-user.target

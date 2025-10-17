@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.8.0_201" class="java.beans.XMLDecoder">
+ <object class="java.util.concurrent.ConcurrentHashMap">
+  <void method="put">
+   <int>0</int>
+   <object class="com.dss.vms.common.data.VideoCamera">
+    <void property="analyticStreamURL">
+     <string>rtsp://45.64.237.125:554/</string>
+    </void>
+    <void property="id">
+     <int>0</int>
+    </void>
+    <void property="ip">
+     <string>rtsp://45.64.237.125:554/</string>
+    </void>
+    <void property="macroStreamURL">
+     <string>rtsp://45.64.237.125:554/</string>
+    </void>
+    <void property="microStreamURL">
+     <string>rtsp://45.64.237.125:554/</string>
+    </void>
+    <void property="miniStreamURL">
+     <string>rtsp://45.64.237.125:554/</string>
+    </void>
+    <void property="model">
+     <string>Custom</string>
+    </void>
+    <void property="name">
+     <string>cam1</string>
+    </void>
+    <void property="recordingStream">
+     <object class="java.lang.Enum" method="valueOf">
+      <class>com.dss.vms.common.constants.StreamType</class>
+      <string>ANALYTIC</string>
+     </object>
+    </void>
+    <void property="streamingPassword">
+     <string>123456</string>
+    </void>
+    <void property="streamingUsername">
+     <string>admin</string>
+    </void>
+   </object>
+  </void>
+ </object>
+</java>

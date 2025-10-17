@@ -1,0 +1,1004 @@
+/* StreamMaster.cpp
+ *
+ *  Created on: 03-Dec-2018
+ *      Author: dss-06
+ */
+
+
+#include <stdlib.h>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <sqlite3.h>
+#include <sys/time.h>
+#include <time.h>
+#include <bits/stdc++.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <pthread.h>
+
+#include "DataTypes.h"
+#include "ErrorTypes.h"
+#include "config_SM.h"
+#include "testRTSPClient.h"
+#include "StreamMaster.h"
+#include "saveframes.h"
+#include "api_cpp.h"
+
+using namespace std;
+
+#define TIME_DIFF 30
+#define DEBUG 0
+//#define FINAL_FILE_NAME "record.mp4"
+
+/*
+ * Global dataspace for the module
+ */
+UINT8 *globalDataSpace = NULL;
+CHAR8 name_format[50];
+UINT8 *dataBuffer;
+pthread_mutex_t ml;
+CHAR8 tmp[20];
+
+typedef struct _StreamDataSpace
+{
+	std::string			m_CamModel;
+	const CHAR8			*m_RtspURL;
+	std::string			m_UserId;
+	std::string			m_Password;
+	UINT32				m_camId;
+	//RTSPClient			*m_RtspClient;
+	//Authenticator		*m_Authenticator;
+	//pthread_t 			thread;
+	AVFormatContext 	*pFormatCtx;
+	INT32 				count,videoStream,framecount,difference;
+	AVCodecContext 		*pCodecCtx;
+	AVCodec 			*pCodec;
+	AVFrame 			*pFrame;
+	AVFrame 			*pFrameRGB;
+	AVPacket 			packet;
+	INT32 				frameFinished;
+	INT32 				numBytes;
+	uint8_t 			*buffer;
+	VideoCapture		*vc;
+	int diff;
+	struct timeval start,end,rstart,rend;
+	unsigned long long int t_start,t_end;
+	unsigned long long int r_start,r_end;
+	//long long int currTime;
+	//static long long int prevPresentationTime;
+	time_t t;
+	struct tm tm;
+	UINT32 size;
+	AVPacket videoPkt;
+	AVPacket pkt;
+	//AVFormatContext *ifmt_ctx, *ofmt_ctx;
+	char fname[100];
+	AVStream *inVideoStream;
+	AVStream *outVideoStream;
+	int err;
+	char ftemp[30];
+	//float fps;
+
+	_StreamDataSpace(const CHAR8 *cameraModel, const CHAR8 *cameraURL,
+			const CHAR8 * userId, const CHAR8 * password, UINT32 cameraId)
+	{
+		m_CamModel= cameraModel;
+		m_RtspURL= cameraURL;
+		m_UserId = userId;
+		m_Password = password;
+		m_camId = cameraId;
+		//m_RtspClient = NULL;
+		//m_Authenticator = new Authenticator(m_UserId.c_str(), m_Password.c_str());
+		pFormatCtx = NULL;
+		count = 1;
+		//fps = 25;
+		//ifmt_ctx = NULL;
+		//ofmt_ctx = NULL;
+	}
+
+	~_StreamDataSpace()
+	{
+		//delete m_Authenticator;
+		//shutdownStream(m_RtspClient);
+	}
+}StreamDataSpace;
+
+typedef struct _SMDataSpace
+{
+	//TaskScheduler					*m_Scheduler;
+	//UsageEnvironment				*m_Env;
+	INT32 							nCamera;
+	std::vector<StreamDataSpace *> 	m_StreamList;
+
+	_SMDataSpace()
+	{
+		//m_Scheduler = BasicTaskScheduler::createNew();
+		//m_Env = BasicUsageEnvironment::createNew(*m_Scheduler);
+		nCamera = 0;
+	}
+
+	~_SMDataSpace()
+	{
+		//m_Env->reclaim();
+		//delete m_Scheduler;
+		nCamera = -1;
+	}
+}SMDataSpace;
+
+typedef struct _DataBase
+{
+	sqlite3 *db;
+	char *zErrMsg;
+	int rc;
+	char *sql;
+}DataBase;
+
+//DataBase *d;
+
+static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
+	int i;
+	for(i = 0; i<argc; i++) {
+		printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+	}
+	printf("\n");
+	return 0;
+}
+
+UINT32 createFolder(char *name)
+{
+	if (mkdir(name, 0777) == -1)
+		return 1;
+	//cerr << "Error :  " << strerror(errno) << endl;
+	else
+		return 0;
+	//cout << "Directory created";
+}
+
+ErrorTypes Initialize()
+{
+	globalDataSpace = (UINT8 *)(new SMDataSpace);
+	printf("I am initialize in stream master");
+
+	if ( NULL == globalDataSpace ){
+		return DSS_ERROR;
+	}
+
+	cout<<"Camera id new:"<<((SMDataSpace *)globalDataSpace)->nCamera<<endl;
+	av_register_all();
+	avformat_network_init();
+
+	if (pthread_mutex_init(&ml, NULL) != 0){
+		printf("\n mutex init has failed\n");
+		return DSS_ERROR;
+	}
+
+	/*	d = (DataBase *)malloc(sizeof(DataBase));
+	d->zErrMsg = 0;
+
+	createFolder("db");
+
+	d->rc = sqlite3_open("./db/VMS_DB.db", &(d->db));
+
+	if( d->rc ) {
+		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(d->db));
+		exit(1);
+		return DSS_ERROR;
+	} else {
+		fprintf(stderr, "Opened database successfully\n");
+	}
+
+	 Create SQL statement
+	d->sql = "CREATE TABLE IF NOT EXISTS RECORD_LOG("  \
+			"KEY INTEGER	PRIMARY KEY AUTOINCREMENT," \
+			"CAM_ID INT NOT NULL," \
+			"START_TIME INT(16) NOT NULL," \
+			"END_TIME INT(16) NOT NULL," \
+			"KEEP BOOLEAN NOT NULL," \
+			"URL TEXT NOT NULL);";
+
+	 Execute SQL statement
+	d->rc = sqlite3_exec(d->db, d->sql, callback, 0, &(d->zErrMsg));
+
+	if( d->rc != SQLITE_OK ){
+		fprintf(stderr, "SQL error: %s\n", d->zErrMsg);
+		sqlite3_free(d->zErrMsg);
+		return DSS_ERROR;
+	} else {
+		fprintf(stdout, "Table created successfully\n");
+	}
+	sqlite3_close(d->db);
+	free(d);*/
+
+	return DSS_SUCCESS;
+}
+
+ErrorTypes AddStream(UINT8 *dataSpace, const CHAR8 *cameraModel,
+		const CHAR8 *cameraURL, const CHAR8 *userId, const CHAR8 *pass, UINT32 camId)
+{
+	if (*((INT32 *)dataSpace) < (INT32)sizeof(StreamDataSpace *)){
+		*((INT32 *)dataSpace) = sizeof(StreamDataSpace *);
+		return DSS_INSUFICIENT_MEMORY;
+	}
+
+	//	if (pthread_mutex_init(&ml, NULL) != 0){
+	//		printf("\n mutex init has failed\n");
+	//		return DSS_ERROR;
+	//	}
+
+	pthread_mutex_lock(&ml);
+
+	StreamDataSpace *sDataSpace = new StreamDataSpace(cameraModel, cameraURL, userId, pass, camId);
+	//printf("say new = %d\n",sDataSpace->count);
+	//((SMDataSpace *)globalDataSpace)->nCamera++;
+
+		//if(((SMDataSpace *)globalDataSpace)->nCamera == 16)
+		//	return DSS_ERROR;
+	pthread_mutex_unlock(&ml);
+
+	//printf("abc = %d\n",camId);
+
+	std::string buf(sDataSpace->m_RtspURL);
+	buf.append("?username=");
+	buf.append(sDataSpace->m_UserId);
+	buf.append("&password=");
+	buf.append(sDataSpace->m_Password);
+#if 0
+	cout<<"URL :"<<buf.c_str()<<endl;
+	cout<<"Camera id :"<<((SMDataSpace *)globalDataSpace)->nCamera<<endl;
+#endif
+
+	if (avformat_open_input(&(sDataSpace->pFormatCtx), buf.c_str(), NULL,NULL) != 0)
+		return DSS_ERROR; // Couldn't open file
+
+	// Retrieve stream information
+	if (avformat_find_stream_info(sDataSpace->pFormatCtx, NULL) < 0)
+		return DSS_ERROR; // Couldn't find stream information
+
+	//*((UINT64 *)dataSpace + sizeof(int)) = (UINT64)sDataSpace;
+	*((UINT64 *)dataSpace + sizeof(char)) = (UINT64)sDataSpace;
+
+	//for testing
+	pthread_mutex_lock(&ml);
+	((SMDataSpace *)globalDataSpace)->m_StreamList.push_back(sDataSpace);
+	pthread_mutex_unlock(&ml);
+
+	return DSS_SUCCESS;
+}
+
+ErrorTypes GetContent(UINT8 *dataSpace, UINT8 *contentBuff)
+{
+	//UINT8 *dataVc;
+	// Initialising the mutux lock
+	//	if (pthread_mutex_init(&ml, NULL) != 0){
+	//		printf("\n mutex init has failed\n");
+	//		return DSS_ERROR;
+	//	}
+
+	pthread_mutex_lock(&ml);
+	StreamDataSpace *sDataSpace = (StreamDataSpace *)(*((UINT64 *)dataSpace + sizeof(char)));
+	VideoCapture *vc = new VideoCapture();
+	pthread_mutex_unlock(&ml);
+	//printf("say somethingsdv = %d\n",sDataSpace->count);
+	if(sDataSpace->count == 1){
+		// Find the first video stream
+		printf("\nStarting finding first video stream\n");
+		sDataSpace->videoStream = -1;
+		for (int i = 0; i < sDataSpace->pFormatCtx->nb_streams; i++)
+			if (sDataSpace->pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+			{
+				//sDataSpace->pCodecCtx->framerate = av_guess_frame_rate(sDataSpace->pFormatCtx, sDataSpace->pFormatCtx->streams[i], NULL);
+				sDataSpace->videoStream = i;
+				break;
+			}
+		if (sDataSpace->videoStream == -1)
+			return DSS_ERROR; // Didn't find a video stream
+
+		// Get a pointer to the codec context for the video stream
+		sDataSpace->pCodecCtx = sDataSpace->pFormatCtx->streams[sDataSpace->videoStream]->codec;
+
+		// Find the decoder for the video stream
+		sDataSpace->pCodec = avcodec_find_decoder(sDataSpace->pCodecCtx->codec_id);
+		if (sDataSpace->pCodec == NULL)
+		{
+			fprintf(stderr, "Unsupported codec!\n");
+			return DSS_ERROR; // Codec not found
+		}
+
+		// Open codec
+		if (avcodec_open2(sDataSpace->pCodecCtx, sDataSpace->pCodec, NULL) < 0)
+			return DSS_ERROR; // Could not open codec
+
+		// Allocate video frame
+		sDataSpace->pFrame = av_frame_alloc();
+
+		// Allocate an AVFrame structure
+		sDataSpace->pFrameRGB = av_frame_alloc();
+		if (sDataSpace->pFrameRGB == NULL)
+			return DSS_ERROR;
+
+		// Determine required buffer size and allocate buffer
+		sDataSpace->numBytes = avpicture_get_size( AV_PIX_FMT_YUV420P, sDataSpace->pCodecCtx->width,
+				sDataSpace->pCodecCtx->height);
+		sDataSpace->buffer = (uint8_t *) av_malloc(sDataSpace->numBytes * sizeof(uint8_t));
+		//av_frame_free
+		// Assign appropriate parts of buffer to image planes in pFrameRGB
+		// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
+		// of AVPicture
+		avpicture_fill((AVPicture *) sDataSpace->pFrameRGB, sDataSpace->buffer,  AV_PIX_FMT_YUV420P,
+				sDataSpace->pCodecCtx->width, sDataSpace->pCodecCtx->height);
+
+		//		pthread_mutex_lock(&ml);
+		//		dataVc = (UINT8 *)malloc((INT32)sizeof(VideoCapture *));
+		//		pthread_mutex_unlock(&ml);
+
+		//pthread_mutex_lock(&ml);
+
+		Initz(sDataSpace->pCodecCtx->width, sDataSpace->pCodecCtx->height, 25, 2500, dataSpace);
+		//pthread_mutex_unlock(&ml);
+
+		// Read frames and save first five frames to disk
+		sDataSpace->framecount = 0;
+
+		//Start time of file for database
+		gettimeofday(&sDataSpace->start,NULL);
+		sDataSpace->t_start = sDataSpace->start.tv_sec * 1000;
+		/*
+		 * This is for calculating time of file
+		 */
+		gettimeofday(&(sDataSpace->rstart),NULL);
+		sDataSpace->r_start = sDataSpace->rstart.tv_sec;
+		sDataSpace->difference = 0;
+	}// else{
+	//return DSS_ERROR;
+	//}
+	//pthread_mutex_lock(&ml);
+	int fileLen = 0;
+	//printf("done\n");
+	if (av_read_frame(sDataSpace->pFormatCtx, &(sDataSpace->packet)) >= 0 && sDataSpace->difference < TIME_DIFF) {
+		//pthread_mutex_unlock(&ml);
+		//printf("count = %d with camera id %d\n",sDataSpace->count,sDataSpace->m_camId);
+		sDataSpace->count++;
+		//printf("I am sure\n");
+		// Is this a packet from the video stream?
+		if (sDataSpace->packet.stream_index == sDataSpace->videoStream)
+		{
+			//printf("real\n");
+			// Decode video frame
+			int s = avcodec_decode_video2(sDataSpace->pCodecCtx, sDataSpace->pFrame, &(sDataSpace->frameFinished), &(sDataSpace->packet));
+			//printf("fake\n");
+			int extra = sizeof(int) + sizeof(int64_t) + sizeof(int64_t);
+
+			if (*((INT32 *)contentBuff) < sDataSpace->packet.size + extra){
+				*((INT32 *)contentBuff) = sDataSpace->packet.size + extra;
+				return DSS_INSUFICIENT_MEMORY;
+			}
+
+			//*(INT32 *)contentBuff = sDataSpace->packet.size + extra;
+			printf("Size of content buffer = %d\n",*(INT32 *)contentBuff);
+
+			memcpy(contentBuff + sizeof(int), &sDataSpace->packet.flags, sizeof(int) );
+			memcpy(contentBuff + sizeof(int) + sizeof(int), &sDataSpace->packet.pts, sizeof(int64_t));
+			memcpy(contentBuff + sizeof(int) + sizeof(int) + sizeof(int64_t), &sDataSpace->packet.dts, sizeof(int64_t));
+			memcpy(contentBuff + sizeof(int) + sizeof(int) + sizeof(int64_t) + sizeof(int64_t), sDataSpace->packet.data, sDataSpace->packet.size);
+
+			//TEsting
+//			unsigned char *testBuffer = contentBuff;
+//			for(int pos = 0; pos < 2*sDataSpace->packet.size + extra; pos++){
+//				printf("value -> %d \n", testBuffer[pos]);
+//			}
+//			printf("Run = %d\n", sDataSpace->packet.size);
+			//exit(1);
+#if 0
+				FILE *fp;
+				char name[50];
+				static int count = 0;
+				sprintf(name, "output_%d.dat", count++);
+				fp = fopen(name,"wb");
+				if(fp)
+				{
+					//fwrite(&sDataSpace->packet.data, 1, sDataSpace->packet.size, fp);
+					fwrite(&sDataSpace->packet.flags, 1, sizeof(int), fp);
+					fwrite(&sDataSpace->packet.pts, 1, sizeof(int64_t), fp);
+					fwrite(&sDataSpace->packet.dts, 1, sizeof(int64_t), fp);
+					fwrite(sDataSpace->packet.data, 1, sDataSpace->packet.size, fp);
+					printf("Size by s = %d\n",s);
+					printf("Size by size = %d\n",sDataSpace->packet.size);
+					//fprintf(fp,"P5\n%d %d\n%d\n",sDataSpace->pCodecCtx->width,sDataSpace->pCodecCtx->height,255);
+					//fprintf(fp, "FF D8");
+					//for(int i=0;i<sDataSpace->pCodecCtx->height;i++) {
+					//fwrite(sDataSpace->pFrame->data[0] + i * sDataSpace->pFrame->linesize[0], 1, sDataSpace->pCodecCtx->width, fp);
+					//*(contentBuff + sizeof(int)) =
+					//}
+					//fwrite(sDataSpace->pFrame);
+					//fprintf(fp, "FF D9");
+					//fwrite(contentBuff + sizeof(int), sDataSpace->size, 1, fp);
+					//fflush(fp);
+					//exit(1);
+				}
+				else
+				{
+					printf("Error in file opening\n");
+					exit(1);
+				}
+				fclose(fp);
+
+#endif
+
+			// Did we get a video frame?
+			if (sDataSpace->frameFinished)
+			{
+				// Convert the image from its native format to RGB
+				struct SwsContext *ctx = sws_getContext(sDataSpace->pCodecCtx->width, sDataSpace->pCodecCtx->height, sDataSpace->pCodecCtx->pix_fmt, sDataSpace->pCodecCtx->width,
+						sDataSpace->pCodecCtx->height,  AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
+				sws_scale(ctx, sDataSpace->pFrame->data, sDataSpace->pFrame->linesize, 0, sDataSpace->pCodecCtx->height,
+						sDataSpace->pFrameRGB->data, sDataSpace->pFrameRGB->linesize);
+
+				/*
+				 * Calculating fps
+				 */
+				struct timeval presentationTime;
+				gettimeofday(&presentationTime,NULL);
+				long long int currTime = presentationTime.tv_sec * 1000 + (long long int)(presentationTime.tv_usec/1000);
+				static long long int prevPresentationTime = currTime;
+				float fps =  1000.00 / (float)(currTime - prevPresentationTime);
+				prevPresentationTime = currTime;
+				if(fps < 10000)
+				{
+					static int n = 0;
+					static float avg = 0.0;
+					avg = (avg * n + fps)/(float)++n;
+					//printf("avg = %f\n", avg);
+				}
+				printf("fps = %f\n",fps);
+
+				// Save the frame to disk
+				//pthread_mutex_lock(&ml);
+				AddFrame(sDataSpace->pFrame, dataSpace);
+				//pthread_mutex_unlock(&ml);
+			}
+			else
+				printf("Error\n");
+		}
+		// Free the packet that was allocated by av_read_frame
+		//av_free_packet(&(sDataSpace->packet));
+		av_packet_unref(&sDataSpace->packet);
+
+		gettimeofday(&(sDataSpace->rend),NULL);
+		sDataSpace->r_end = sDataSpace->rend.tv_sec;
+		//printf("Time elapse end = %llu\n",sDataSpace->t_end);
+		sDataSpace->difference = sDataSpace->r_end - sDataSpace->r_start;
+		//printf("Time elapse = %llu\n",sDataSpace->difference);
+	}
+	else
+	{
+		printf("pkkkkkkk\n");
+		//exit(1);
+		//printf("Total Frames: %d",sDataSpace->framecount);
+		// Free the RGB image
+		av_free(sDataSpace->buffer);
+		/*	av_free(sDataSpace->pFrameRGB);*/
+
+		// Free the YUV frame
+		av_free(sDataSpace->pFrame);
+
+		// Close the codec
+		avcodec_close(sDataSpace->pCodecCtx);
+
+		/*
+		 * Calculating time and date for file name
+		 */
+		sDataSpace->t = time(NULL);
+		sDataSpace->tm = *localtime(&(sDataSpace->t));
+
+		sprintf(name_format,"%d-%d-%d_%d:%d:%d",sDataSpace->tm.tm_year + 1900, sDataSpace->tm.tm_mon + 1, sDataSpace->tm.tm_mday, sDataSpace->tm.tm_hour, sDataSpace->tm.tm_min, sDataSpace->tm.tm_sec);
+		//printf("now: %d-%d-%d_%d:%d:%d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+		//pthread_mutex_lock(&ml);
+		Finish(dataSpace);
+		//pthread_mutex_unlock(&ml);
+
+		/*
+		 * Inserting values in Table
+		 */
+		/*d = (DataBase *)malloc(sizeof(DataBase));
+		d->zErrMsg = 0;
+
+		d->rc = sqlite3_open("./db/VMS_DB.db", &(d->db));
+
+		if( d->rc ) {
+			fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(d->db));
+			exit(1);
+			return DSS_ERROR;
+		} else {
+			fprintf(stderr, "Opened database successfully\n");
+		}
+
+		gettimeofday(&sDataSpace->end,NULL);
+		sDataSpace->t_end = sDataSpace->end.tv_sec * 1000;
+
+#if DEBUG
+		int diff = (sDataSpace->t_end - sDataSpace->t_start)/1000;
+		printf("\n\n\ntime = %d\n\n\n\n",diff);
+#endif
+
+		char sqlStr[300];
+		 Create SQL statement
+		sprintf(sqlStr, "INSERT INTO RECORD_LOG (CAM_ID, START_TIME, END_TIME, KEEP, URL) VALUES "
+				"(%d, %llu, %llu, 1, 'records/record_%s.mp4' );",sDataSpace->m_camId,sDataSpace->t_start,sDataSpace->t_end,name_format);
+
+		 Execute SQL statement
+		d->rc = sqlite3_exec(d->db, sqlStr, callback, 0, &(d->zErrMsg));
+
+		if( d->rc != SQLITE_OK ){
+			fprintf(stderr, "SQL error: %s\n", d->zErrMsg);
+			sqlite3_free(d->zErrMsg);
+			//sDataSpace->count = 1;
+			exit(1);
+			return DSS_ERROR;
+		} else {
+			fprintf(stdout, "Insert into Table successfully\n");
+			//exit(0);
+		}
+		sqlite3_close(d->db);
+		free(d);*/
+
+		//pthread_mutex_lock(&ml);
+		sDataSpace->count = 1;
+		//pthread_mutex_unlock(&ml);
+	}
+
+	//pthread_mutex_destroy(&ml);
+
+	return DSS_SUCCESS;
+}
+
+ErrorTypes RemoveStream(UINT8 *dataSpace)
+{
+	StreamDataSpace *sDataSpace = (StreamDataSpace *)(*((UINT64 *)dataSpace + sizeof(char)));
+	INT32 camId = sDataSpace->m_camId;
+
+	for ( INT32 cIndex = 0; cIndex < ((SMDataSpace *)globalDataSpace)->nCamera; cIndex ++ )
+	{
+		if ( ((SMDataSpace *)globalDataSpace)->m_StreamList[cIndex]->m_camId == camId )
+		{
+			((SMDataSpace *)globalDataSpace)->m_StreamList.erase(((SMDataSpace *)globalDataSpace)->m_StreamList.begin() + cIndex);
+			((SMDataSpace *)globalDataSpace)->nCamera --;
+			break;
+		}
+	}
+
+	delete sDataSpace;
+
+	return DSS_SUCCESS;
+}
+
+ErrorTypes PauseStream(UINT8 *dataSpace)
+{
+	return DSS_SUCCESS;
+}
+
+ErrorTypes ResumeStream(UINT8 *dataSpace)
+{
+	return DSS_SUCCESS;
+}
+
+ErrorTypes TearDown()
+{
+	delete (SMDataSpace *)globalDataSpace;
+
+	if ( NULL != globalDataSpace )
+	{
+		return DSS_ERROR;
+	}
+
+	return DSS_SUCCESS;
+}
+
+void *Test(void *arg)
+{
+	if (pthread_mutex_init(&ml, NULL) != 0){
+		printf("\n mutex init has failed\n");
+		return NULL;
+	}
+
+	//StreamDataSpace *sDataSpace;
+	Data *d = (Data *)arg;
+
+	d->count = 1;
+	while(true)
+	{
+		if(d->count == 1)
+		{
+			AddStream(d->buffer, d->model, d->url, d->user, d->pass, d->camId);
+			d->count++;
+		}
+
+		int x = GetContent(d->buffer, d->dataBuffer);
+		printf("\nReturn Status = %d\n",x);
+	}
+	pthread_mutex_destroy(&ml);
+	return NULL;
+}
+
+void Initz(int width, int height, int fpsrate, int bitrate, UINT8 *mapping) {
+
+	pthread_mutex_lock(&ml);
+
+	StreamDataSpace *sDataSpace = (StreamDataSpace *)(*((UINT64 *)mapping + sizeof(char)));
+	sDataSpace->vc = new VideoCapture();
+
+	//VideoCapture *vc = (VideoCapture *)(*((UINT64 *)mapping + sizeof(int)));
+	sDataSpace->vc->ftemp = (char *)malloc(sizeof(char) * 20);
+	sprintf(sDataSpace->vc->ftemp, "tmp%d.h264", sDataSpace->m_camId);
+
+	pthread_mutex_unlock(&ml);
+
+	//static AVRational av_make_q	(int num, int den );
+	//av_cmp_q(fpsrate, 1);
+
+	//double rate = av_q2d(fpsrate);
+	//cout<<"Rate = "<<rate<<endl;
+	//exit(1);
+	sDataSpace->vc->fps = fpsrate;
+
+	//int err;
+
+	if (!(sDataSpace->vc->oformat = av_guess_format(NULL, sDataSpace->vc->ftemp, NULL))) {
+		Debug("Failed to define output format", 0);
+		return;
+	}
+
+	if ((sDataSpace->err = avformat_alloc_output_context2(&(sDataSpace->vc->ofctx), sDataSpace->vc->oformat, NULL, sDataSpace->vc->ftemp) < 0)) {
+		Debug("Failed to allocate output context", sDataSpace->err);
+		Free(mapping);
+		return;
+	}
+
+	if (!(sDataSpace->vc->codec = avcodec_find_encoder(sDataSpace->vc->oformat->video_codec))) {
+		Debug("Failed to find encoder", 0);
+		Free(mapping);
+		return;
+	}
+
+	if (!(sDataSpace->vc->videoStream = avformat_new_stream(sDataSpace->vc->ofctx, sDataSpace->vc->codec))) {
+		Debug("Failed to create new stream", 0);
+		Free(mapping);
+		return;
+	}
+
+	if (!(sDataSpace->vc->cctx = avcodec_alloc_context3(sDataSpace->vc->codec))) {
+		Debug("Failed to allocate codec context", 0);
+		Free(mapping);
+		return;
+	}
+
+	sDataSpace->vc->videoStream->codecpar->codec_id = sDataSpace->vc->oformat->video_codec;
+	sDataSpace->vc->videoStream->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+	sDataSpace->vc->videoStream->codecpar->width = width;
+	sDataSpace->vc->videoStream->codecpar->height = height;
+	sDataSpace->vc->videoStream->codecpar->format = AV_PIX_FMT_YUV420P;
+	sDataSpace->vc->videoStream->codecpar->bit_rate = bitrate * 1000;
+	sDataSpace->vc->videoStream->time_base = { 1, sDataSpace->vc->fps };
+
+	avcodec_parameters_to_context(sDataSpace->vc->cctx, sDataSpace->vc->videoStream->codecpar);
+	sDataSpace->vc->cctx->time_base = { 1, sDataSpace->vc->fps };
+	sDataSpace->vc->cctx->max_b_frames = 2;
+	sDataSpace->vc->cctx->gop_size = 12;
+	if (sDataSpace->vc->videoStream->codecpar->codec_id == AV_CODEC_ID_H264) {
+		av_opt_set(sDataSpace->vc->cctx, "preset", "ultrafast", 0);
+	}
+	if (sDataSpace->vc->ofctx->oformat->flags & AVFMT_GLOBALHEADER) {
+		sDataSpace->vc->cctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+	}
+	avcodec_parameters_from_context(sDataSpace->vc->videoStream->codecpar, sDataSpace->vc->cctx);
+
+	if ((sDataSpace->err = avcodec_open2(sDataSpace->vc->cctx, sDataSpace->vc->codec, NULL)) < 0) {
+		Debug("Failed to open codec", sDataSpace->err);
+		Free(mapping);
+		return;
+	}
+
+	if (!(sDataSpace->vc->oformat->flags & AVFMT_NOFILE)) {
+		if ((sDataSpace->err = avio_open(&(sDataSpace->vc->ofctx->pb), sDataSpace->vc->ftemp, AVIO_FLAG_WRITE)) < 0) {
+			Debug("Failed to open file", sDataSpace->err);
+			Free(mapping);
+			return;
+		}
+	}
+
+	if ((sDataSpace->err = avformat_write_header(sDataSpace->vc->ofctx, NULL)) < 0) {
+		Debug("Failed to write header", sDataSpace->err);
+		Free(mapping);
+		return;
+	}
+	//pthread_mutex_lock(&ml);
+	av_dump_format(sDataSpace->vc->ofctx, 0, sDataSpace->vc->ftemp, 1);
+	//pthread_mutex_unlock(&ml);
+	//*((UINT64 *)mapping) = (UINT64)vc;
+
+	//avcodec_close(sDataSpace->vc->cctx);
+	printf("Success to init\n");
+}
+
+void AddFrame(AVFrame *videoFrameTest, UINT8 *mapping) {
+
+	pthread_mutex_lock(&ml);
+	StreamDataSpace *sDataSpace = (StreamDataSpace *)(*((UINT64 *)mapping + sizeof(char)));
+	//VideoCapture *vc = (VideoCapture *)(*((UINT64 *)mapping) + sizeof(int));
+	//vc = new VideoCapture();
+	pthread_mutex_unlock(&ml);
+
+	//int err;
+	if (!(sDataSpace->vc->videoFrame)) {
+
+		sDataSpace->vc->videoFrame = av_frame_alloc();
+		sDataSpace->vc->videoFrame->format = AV_PIX_FMT_YUV420P;
+		sDataSpace->vc->videoFrame->width = sDataSpace->vc->cctx->width;
+		sDataSpace->vc->videoFrame->height = sDataSpace->vc->cctx->height;
+
+		if ((sDataSpace->err = av_frame_get_buffer(sDataSpace->vc->videoFrame, 32)) < 0) {
+			Debug("Failed to allocate picture", sDataSpace->err);
+			return;
+		}
+	}
+
+	//printf("frame Counter = %d of camera = %d\n",sDataSpace->vc->frameCounter,sDataSpace->m_camId);
+	//vc->frameCounter = 0;
+	sDataSpace->vc->videoFrame->pts = sDataSpace->vc->frameCounter++;
+	pthread_mutex_lock(&ml);
+	if ((sDataSpace->err = avcodec_send_frame(sDataSpace->vc->cctx, videoFrameTest)) < 0) {
+		Debug("Failed to send frame", sDataSpace->err);
+		return;
+	}
+	pthread_mutex_unlock(&ml);
+
+	//StreamDataSpace *sDataSpace = (StreamDataSpace *)(*((UINT64 *)stream + sizeof(int)));
+	//AVPacket pkt;
+	av_init_packet(&(sDataSpace->pkt));
+	sDataSpace->pkt.data = NULL;
+	sDataSpace->pkt.size = 0;
+	//cout<<"Size before"<<sDataSpace->pkt.size<<endl;
+	//pthread_mutex_lock(&ml);
+	if (avcodec_receive_packet(sDataSpace->vc->cctx, &(sDataSpace->pkt)) == 0) {
+		sDataSpace->pkt.flags |= AV_PKT_FLAG_KEY;
+		av_interleaved_write_frame(sDataSpace->vc->ofctx, &(sDataSpace->pkt));
+		av_packet_unref(&(sDataSpace->pkt));
+	}
+	//pthread_mutex_unlock(&ml);
+}
+
+void Finish(UINT8 *mapping) {
+
+	pthread_mutex_lock(&ml);
+
+	//VideoCapture *vc = (VideoCapture *)(*((UINT64 *)mapping));
+	StreamDataSpace *sDataSpace = (StreamDataSpace *)(*((UINT64 *)mapping + sizeof(char)));
+
+	pthread_mutex_unlock(&ml);
+
+	//DELAYED FRAMES
+	//AVPacket pkt;
+	av_init_packet(&(sDataSpace->pkt));
+	sDataSpace->pkt.data = NULL;
+	sDataSpace->pkt.size = 0;
+	//pthread_mutex_lock(&ml);
+	for (;;) {
+		avcodec_send_frame(sDataSpace->vc->cctx, NULL);
+		if (avcodec_receive_packet(sDataSpace->vc->cctx, &(sDataSpace->pkt)) == 0) {
+			av_interleaved_write_frame(sDataSpace->vc->ofctx, &(sDataSpace->pkt));
+			av_packet_unref(&(sDataSpace->pkt));
+		}
+		else {
+			break;
+		}
+	}
+
+	av_write_trailer(sDataSpace->vc->ofctx);
+	//pthread_mutex_unlock(&ml);
+	if (!(sDataSpace->vc->oformat->flags & AVFMT_NOFILE)) {
+		int err = avio_close(sDataSpace->vc->ofctx->pb);
+		if (err < 0) {
+			Debug("Failed to close file", err);
+		}
+	}
+
+	Free(mapping);
+
+	Remux(mapping);
+}
+
+void Free(UINT8 *mapping) {
+
+	pthread_mutex_lock(&ml);
+	StreamDataSpace *sDataSpace = (StreamDataSpace *)(*((UINT64 *)mapping + sizeof(char)));
+	//VideoCapture *vc = (VideoCapture *)(*((UINT64 *)mapping));
+	pthread_mutex_unlock(&ml);
+	printf("Free\n");
+	if (sDataSpace->vc->videoFrame) {
+		printf("Inside Free\n");
+		av_frame_free(&(sDataSpace->vc->videoFrame));
+	}
+	if (sDataSpace->vc->cctx) {
+		avcodec_free_context(&(sDataSpace->vc->cctx));
+	}
+	if (sDataSpace->vc->ofctx) {
+		avformat_free_context(sDataSpace->vc->ofctx);
+	}
+	if (sDataSpace->vc->swsCtx) {
+		sws_freeContext(sDataSpace->vc->swsCtx);
+	}
+	printf("Success to free\n");
+
+}
+
+void Remux(UINT8 *mapping) {
+
+	pthread_mutex_lock(&ml);
+	StreamDataSpace *sDataSpace = (StreamDataSpace *)(*((UINT64 *)mapping + sizeof(char)));
+
+	//AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
+	//int err;
+
+	createFolder("records");
+
+	sprintf(sDataSpace->fname, "./records/camid_%d_%s.mp4", sDataSpace->m_camId, name_format);
+
+	pthread_mutex_unlock(&ml);
+
+	//pthread_mutex_lock(&ml);
+	if ((sDataSpace->err = avformat_open_input(&(sDataSpace->vc->ifmt_ctx), sDataSpace->vc->ftemp, 0, 0)) < 0) {
+		Debug("Failed to open input file for remuxing", sDataSpace->err);
+		// goto end;
+		//		if (sDataSpace->vc->ifmt_ctx) {
+		//			avformat_close_input(&(sDataSpace->vc->ifmt_ctx));
+		//		}
+		//		if (sDataSpace->vc->ofmt_ctx && !(sDataSpace->vc->ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
+		//			avio_closep(&(sDataSpace->vc->ofmt_ctx->pb));
+		//		}
+		//		if (sDataSpace->vc->ofmt_ctx) {
+		//			avformat_free_context(sDataSpace->vc->ofmt_ctx);
+		//		}
+	}
+	//pthread_mutex_unlock(&ml);
+	//pthread_mutex_lock(&ml);
+	if ((sDataSpace->err = avformat_find_stream_info(sDataSpace->vc->ifmt_ctx, 0)) < 0) {
+		Debug("Failed to retrieve input stream information", sDataSpace->err);
+		//  goto end;
+		//		if (sDataSpace->vc->ifmt_ctx) {
+		//			avformat_close_input(&(sDataSpace->vc->ifmt_ctx));
+		//		}
+		//		if (sDataSpace->vc->ofmt_ctx && !(sDataSpace->vc->ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
+		//			avio_closep(&(sDataSpace->vc->ofmt_ctx->pb));
+		//		}
+		//		if (sDataSpace->vc->ofmt_ctx) {
+		//			avformat_free_context(sDataSpace->vc->ofmt_ctx);
+		//		}
+	}
+	//pthread_mutex_unlock(&ml);
+	//pthread_mutex_lock(&ml);
+	if ((sDataSpace->err = avformat_alloc_output_context2(&(sDataSpace->vc->ofmt_ctx), NULL, NULL, sDataSpace->fname))) {
+		Debug("Failed to allocate output context", sDataSpace->err);
+		// goto end;
+		//		if (sDataSpace->vc->ifmt_ctx) {
+		//			avformat_close_input(&(sDataSpace->vc->ifmt_ctx));
+		//		}
+		//		if (sDataSpace->vc->ofmt_ctx && !(sDataSpace->vc->ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
+		//			avio_closep(&(sDataSpace->vc->ofmt_ctx->pb));
+		//		}
+		//		if (sDataSpace->vc->ofmt_ctx) {
+		//			avformat_free_context(sDataSpace->vc->ofmt_ctx);
+		//		}
+	}
+	//pthread_mutex_unlock(&ml);
+	//pthread_mutex_lock(&ml);
+	sDataSpace->inVideoStream = sDataSpace->vc->ifmt_ctx->streams[0];
+	sDataSpace->outVideoStream = avformat_new_stream(sDataSpace->vc->ofmt_ctx, NULL);
+	//pthread_mutex_unlock(&ml);
+	if (!sDataSpace->outVideoStream) {
+		Debug("Failed to allocate output video stream", 0);
+		// goto end;
+		//		if (sDataSpace->vc->ifmt_ctx) {
+		//			avformat_close_input(&(sDataSpace->vc->ifmt_ctx));
+		//		}
+		//		if (sDataSpace->vc->ofmt_ctx && !(sDataSpace->vc->ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
+		//			avio_closep(&(sDataSpace->vc->ofmt_ctx->pb));
+		//		}
+		//		if (sDataSpace->vc->ofmt_ctx) {
+		//			avformat_free_context(sDataSpace->vc->ofmt_ctx);
+		//		}
+	}
+	//pthread_mutex_unlock(&ml);
+	//pthread_mutex_lock(&ml);
+	sDataSpace->outVideoStream->time_base = { 1, sDataSpace->vc->fps };
+	avcodec_parameters_copy(sDataSpace->outVideoStream->codecpar, sDataSpace->inVideoStream->codecpar);
+	sDataSpace->outVideoStream->codecpar->codec_tag = 0;
+
+	if (!(sDataSpace->vc->ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
+		if ((sDataSpace->err = avio_open(&(sDataSpace->vc->ofmt_ctx->pb), sDataSpace->fname, AVIO_FLAG_WRITE)) < 0) {
+			Debug("Failed to open output file", sDataSpace->err);
+			//goto end;
+			//			if (sDataSpace->vc->ifmt_ctx) {
+			//				avformat_close_input(&(sDataSpace->vc->ifmt_ctx));
+			//			}
+			//			if (sDataSpace->vc->ofmt_ctx && !(sDataSpace->vc->ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
+			//				avio_closep(&(sDataSpace->vc->ofmt_ctx->pb));
+			//			}
+			//			if (sDataSpace->vc->ofmt_ctx) {
+			//				avformat_free_context(sDataSpace->vc->ofmt_ctx);
+			//			}
+		}
+	}
+	//pthread_mutex_unlock(&ml);
+	//pthread_mutex_lock(&ml);
+	if ((sDataSpace->err = avformat_write_header(sDataSpace->vc->ofmt_ctx, 0)) < 0) {
+		Debug("Failed to write header to output file", sDataSpace->err);
+		// goto end;
+		//		if (sDataSpace->vc->ifmt_ctx) {
+		//			avformat_close_input(&(sDataSpace->vc->ifmt_ctx));
+		//		}
+		//		if (sDataSpace->vc->ofmt_ctx && !(sDataSpace->vc->ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
+		//			avio_closep(&(sDataSpace->vc->ofmt_ctx->pb));
+		//		}
+		//		if (sDataSpace->vc->ofmt_ctx) {
+		//			avformat_free_context(sDataSpace->vc->ofmt_ctx);
+		//		}
+	}
+	//pthread_mutex_unlock(&ml);
+	//free(fname);
+	//free(VIDEO_TMP_FILE);
+
+	//AVPacket videoPkt;
+	//int ts = 0;
+	pthread_mutex_lock(&ml);
+	while (true) {
+
+		//		FILE *fp;
+		//		fp = fopen("adddress.txt","ab");
+		//		if(fp)
+		//		{
+		//			fprintf(fp, "Address= %llu\n", &(sDataSpace->vc->ifmt_ctx));
+		//			fflush(fp);
+		//		}
+		//		fclose(fp);
+		//pthread_mutex_lock(&ml);
+		if ((sDataSpace->err = av_read_frame(sDataSpace->vc->ifmt_ctx, &(sDataSpace->videoPkt))) < 0) {
+			//exit(1);
+			//pthread_mutex_unlock(&ml);
+			break;
+		}
+		//pthread_mutex_unlock(&ml);
+
+		sDataSpace->videoPkt.stream_index = sDataSpace->outVideoStream->index;
+		sDataSpace->videoPkt.pts = sDataSpace->vc->ts;
+		sDataSpace->videoPkt.dts = sDataSpace->vc->ts;
+		sDataSpace->videoPkt.duration = av_rescale_q(sDataSpace->videoPkt.duration, sDataSpace->inVideoStream->time_base, sDataSpace->outVideoStream->time_base);
+		sDataSpace->vc->ts += sDataSpace->videoPkt.duration;
+		sDataSpace->videoPkt.pos = -1;
+		//pthread_mutex_lock(&ml);
+		if ((sDataSpace->err = av_interleaved_write_frame(sDataSpace->vc->ofmt_ctx, &(sDataSpace->videoPkt))) < 0) {
+			Debug("Failed to mux packet", sDataSpace->err);
+			av_packet_unref(&(sDataSpace->videoPkt));
+			break;
+		}
+		//pthread_mutex_unlock(&ml);
+		av_packet_unref(&(sDataSpace->videoPkt));
+	}
+	pthread_mutex_unlock(&ml);
+
+	//pthread_mutex_lock(&ml);
+	av_write_trailer(sDataSpace->vc->ofmt_ctx);
+	free(sDataSpace->vc->ftemp);
+	//pthread_mutex_unlock(&ml);
+	//end:
+	//    if (ifmt_ctx) {
+	//        avformat_close_input(&ifmt_ctx);
+	//    }
+	//    if (ofmt_ctx && !(ofmt_ctx->oformat->flags & AVFMT_NOFILE)) {
+	//        avio_closep(&ofmt_ctx->pb);
+	//    }
+	//    if (ofmt_ctx) {
+	//        avformat_free_context(ofmt_ctx);
+	//    }
+}
+

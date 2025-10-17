@@ -1,0 +1,15 @@
+vms (0.0.1-1ubuntu1) UNRELEASED; urgency=medium
+
+  * 
+
+ -- Sibendu <dss-02@dss02-H310M-S2>  Tue, 01 Oct 2019 20:27:51 +0530
+
+vms (0.0.1-1) unstable; urgency=medium
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Sibendu <dss-02@unknown>  Tue, 01 Oct 2019 20:26:00 +0530
+
+ * Bug Fix (Closes: #MJPEG-Stream Hang)  <1 is the bug number of your ITP>
+
+ -- Sibendu <dss-02@unknown>  Tue, 01 Oct 2019 20:26:00 +0530

@@ -1,0 +1,4 @@
+Automatically\ import\ libraries=true
+Private\ Library\ Path=/home/dss-06/Arduino/libraries
+Private\ hardware\ Path=/home/dss-06/Arduino/hardware
+eclipse.preferences.version=1

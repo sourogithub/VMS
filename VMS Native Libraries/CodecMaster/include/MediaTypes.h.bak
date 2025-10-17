@@ -1,0 +1,30 @@
+/*
+ * MediaTypes.h
+ *
+ *  Created on: 30-Oct-2018
+ *      Author: dss-06
+ */
+
+#ifndef INCLUDE_MEDIATYPES_H_
+#define INCLUDE_MEDIATYPES_H_
+
+
+typedef enum _MediaTypes_
+{
+	H264 						= 0,
+	H265						= 1,
+	MJPEG						= 2,
+	MPEG4 						= 3,
+	MP4 						= 4,
+	MOV 						= 5,
+	AVI							= 6,
+	MKV							= 7,
+	FLV							= 8,
+	JPEG						= 9,
+	JPG							= 10
+}MediaTypes;
+
+
+
+
+#endif /* INCLUDE_MEDIATYPES_H_ */

@@ -1,0 +1,42 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+CPP_SRCS += \
+../dlib-19.17/dlib/threads/async.cpp \
+../dlib-19.17/dlib/threads/multithreaded_object_extension.cpp \
+../dlib-19.17/dlib/threads/thread_pool_extension.cpp \
+../dlib-19.17/dlib/threads/threaded_object_extension.cpp \
+../dlib-19.17/dlib/threads/threads_kernel_1.cpp \
+../dlib-19.17/dlib/threads/threads_kernel_2.cpp \
+../dlib-19.17/dlib/threads/threads_kernel_shared.cpp 
+
+OBJS += \
+./dlib-19.17/dlib/threads/async.o \
+./dlib-19.17/dlib/threads/multithreaded_object_extension.o \
+./dlib-19.17/dlib/threads/thread_pool_extension.o \
+./dlib-19.17/dlib/threads/threaded_object_extension.o \
+./dlib-19.17/dlib/threads/threads_kernel_1.o \
+./dlib-19.17/dlib/threads/threads_kernel_2.o \
+./dlib-19.17/dlib/threads/threads_kernel_shared.o 
+
+CPP_DEPS += \
+./dlib-19.17/dlib/threads/async.d \
+./dlib-19.17/dlib/threads/multithreaded_object_extension.d \
+./dlib-19.17/dlib/threads/thread_pool_extension.d \
+./dlib-19.17/dlib/threads/threaded_object_extension.d \
+./dlib-19.17/dlib/threads/threads_kernel_1.d \
+./dlib-19.17/dlib/threads/threads_kernel_2.d \
+./dlib-19.17/dlib/threads/threads_kernel_shared.d 
+
+
+# Each subdirectory must supply rules for building sources it contributes
+dlib-19.17/dlib/threads/%.o: ../dlib-19.17/dlib/threads/%.cpp
+	@echo 'Building file: $<'
+	@echo 'Invoking: GCC C++ Compiler'
+	g++ -std=c++0x -DDLIB_JPEG_SUPPORT -DDLIB_PNG_SUPPORT -I"/home/abc/eclipse-workspace/ProbeMaster/include" -I"/home/abc/eclipse-workspace/ProbeMaster/dlib-19.17/dlib/all" -Iusr/local/include/opencv2/core/ -I/usr/lib/jvm/java-8-oracle/include/ -I/usr/local/lib -I/usr/local/include -I/usr/local/include/opencv -I/usr/lib/jvm/java-8-oracle/include/linux/ -I/usr/lib/jvm/java-11-openjdk-amd64/include -O0 -g3 -Wall -c -fmessage-length=0 -fPIC -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+

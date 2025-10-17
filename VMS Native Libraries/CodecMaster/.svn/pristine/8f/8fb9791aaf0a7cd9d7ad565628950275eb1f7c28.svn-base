@@ -1,0 +1,102 @@
+/*
+ * api_cpp.cpp
+ *
+ *  Created on: 13-Oct-2018
+ *      Author: dss-06
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "api_cpp.h"
+#include "ErrorTypes.h"
+#include "CodecMaster.h"
+
+int d_initialize()
+{
+	ErrorTypes eT = DSS_SUCCESS;
+	printf("I am initialize in codec master api\n");
+	if ( DSS_SUCCESS != (eT = Initializez()) )
+	{
+		//TO DO: Handle the error
+
+		return (UINT32)DSS_ERROR;
+	}
+
+	return (UINT32)(eT);
+}
+
+int tearDown()
+{
+	ErrorTypes eT = DSS_SUCCESS;
+	printf("I am teardown in test\n");
+	if ( DSS_SUCCESS != (eT = TearDown()) )
+	{
+		//TO DO: Handle the error
+
+		return (UINT32)DSS_ERROR;
+	}
+
+	return (UINT32)eT;
+}
+
+void *test(void *arg)
+{
+	Test(arg);
+//
+//	if ( DSS_SUCCESS != (eT = TearDown()) )
+//	{
+//		//TO DO: Handle the error
+//
+//		return (UINT32)DSS_ERROR;
+//	}
+//
+//	return (UINT32)eT;
+}
+
+int addDecoder(unsigned char* mappingBuffer, const char mediaType,
+		const char colorSpace)
+{
+
+	//INT32 bufferSize = *((INT32 *)mappingBuffer);
+
+#if DEBUG_PRINT
+	printf("Buffer Size = %d\n", bufferSize);
+#endif
+
+#if DEBUG_PRINT
+	printf("Camera model:  %s\n",cameraModel);
+	printf("Camera URL:  %s\n", url);
+	printf("Camera UId:  %s\n", username);
+	printf("Camera Pass:  %s\n", password);
+#endif
+
+
+	 // Call AddStream with all inputs
+
+	ErrorTypes eT = AddDecoder(mappingBuffer, mediaType, colorSpace);
+
+	if ( DSS_SUCCESS != eT )
+	{
+		//TO DO: Handle the error
+
+		return (UINT32)DSS_ERROR;
+	}
+
+	return (UINT32)(eT);
+}
+
+int decode(unsigned char *mappingBuffer, unsigned char *encodedBuffer, unsigned int *decodedBuffer)
+{
+	ErrorTypes eT = Decode(mappingBuffer, encodedBuffer, decodedBuffer);
+	printf("Debug errror = %d\n",(UINT32)eT);
+//	if ( DSS_SUCCESS != eT )
+//	{
+//		//TO DO: Handle the error
+//
+//		return (UINT32)DSS_ERROR;
+//	}
+
+	return (UINT32)(eT);
+}

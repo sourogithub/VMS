@@ -1,0 +1,585 @@
+/*
+ * CodecMaster.cpp
+ *
+ *  Created on: 11-Mar-2019
+ *      Author: dss-06
+ */
+
+/*
+ * StreamMaster.cpp
+ *
+ *  Created on: 06-Oct-2018
+ *      Author: dss-06
+ */
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <iostream>
+#include <sys/time.h>
+using namespace std;
+
+#include "CodecMaster.h"
+#include "DataTypes.h"
+#include "ErrorTypes.h"
+#include "config_SM.h"
+//#include <saveframes.h.bak>
+//#include "MediaTypes.h"
+//#include "ColorSpace.h"
+
+#define INBUF_SIZE 4096
+#define AUDIO_INBUF_SIZE 20480
+#define AUDIO_REFILL_THRESH 4096
+
+#define VIDEO_TMP_FILE "tmp.h264"
+#define WIDTH 640
+#define HEIGHT 480
+//#define FINAL_FILE_NAME "record.mp4"
+
+/*
+ * Global dataspace for the module
+ */
+UINT8 *globalDataSpace_d = NULL;
+pthread_mutex_t ml;
+
+typedef struct _DecodeDataSpace
+{
+	AVCodec *pCodec;
+	AVCodecContext *pCodecCtx;
+		SwsContext *img_convert_ctx;
+		int size,size2;
+		uint8_t* picture_buf;
+		AVFrame* pic,* picrgb;
+		uint8_t* picture_buf2;
+		AVPacket packet;
+		int decodesize;
+		char fname[100];
+		int frameFinished, got_output;
+		int bufferSize, bufferSizeEncode;
+		int extra, len, fileLen, len_E;
+		int count;
+		unsigned char RGB[3];
+		char data, alpha;
+		int rgbData;
+		int h_index, w_index;
+		int new_width, new_height;
+		//Encode
+		AVCodec *pCodec_Encode;
+		AVCodecContext *pCodecCtx_Encode;
+		AVPacket packet_E;
+		AVFrame *pic_Encode;
+		int size_Encode;
+		uint8_t *picture_buf_Encode;
+//
+//	AVCodecContext         *pOCodecCtx;
+//	AVCodec                *pOCodec;
+//	uint8_t                *Buffer;
+//	int                     BufSiz;
+//	int                     BufSizActual;
+//	int                     ImgFmt = AV_PIX_FMT_YUVJ420P;
+//	FILE                   *JPEGFile;
+//	char                    JPEGFName[256];
+
+
+	_DecodeDataSpace()
+	{
+
+	}
+
+	~_DecodeDataSpace()
+	{
+
+	}
+}DecodeDataSpace;
+
+ErrorTypes Initialize()
+{
+	//TO DO: Call RTSP initializer here
+
+	globalDataSpace_d = (UINT8 *)(new DecodeDataSpace);
+
+	if ( NULL == globalDataSpace_d )
+	{
+		return DSS_ERROR;
+	}
+
+	avcodec_register_all();
+	av_register_all();
+
+	//	}
+	return DSS_SUCCESS;
+}
+
+ErrorTypes AddDecoder(UINT8 *dataSpace, const CHAR8 mediaType,
+		const CHAR8 colorSpace)
+{
+	if (*((INT32 *)dataSpace) < (INT32)sizeof(DecodeDataSpace *)){
+		*((INT32 *)dataSpace) = sizeof(DecodeDataSpace *);
+		return DSS_INSUFICIENT_MEMORY;
+	}
+	DecodeDataSpace *sDataSpace = new DecodeDataSpace();
+
+	sDataSpace->pCodec = avcodec_find_decoder((AVCodecID)28);
+	sDataSpace->pCodecCtx = avcodec_alloc_context3(sDataSpace->pCodec);
+	sDataSpace->pCodecCtx->width = 1280;
+	sDataSpace->pCodecCtx->height = 720;
+	sDataSpace->pCodecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
+
+	sDataSpace->BufSiz = avpicture_get_size (
+			AV_PIX_FMT_YUVJ420P,sDataSpace->pCodecCtx->width,sDataSpace->pCodecCtx->height );
+
+	sDataSpace->Buffer = (uint8_t *)malloc ( sDataSpace->BufSiz );
+	if ( sDataSpace->Buffer == NULL )
+		return ( 0 );
+	memset ( sDataSpace->Buffer, 0, sDataSpace->BufSiz );
+
+	sDataSpace->pOCodecCtx = avcodec_alloc_context3 (sDataSpace->pCodec);
+	if ( !sDataSpace->pOCodecCtx ) {
+		free ( sDataSpace->Buffer );
+		return ( 0 );
+	}
+
+
+	*((UINT64 *)dataSpace + sizeof(char)) = (UINT64)sDataSpace;
+	return DSS_SUCCESS;
+}
+
+ErrorTypes Decode(UINT8 *dataSpace, UINT8 *encodedBuffer, UINT32 *decodedBuffer)
+{
+	pthread_mutex_lock(&ml);
+	DecodeDataSpace *sDataSpace = (DecodeDataSpace *)(*((UINT64 *)dataSpace + sizeof(char)));
+	pthread_mutex_unlock(&ml);
+
+	printf("Width before = %d\n",sDataSpace->pCodecCtx->width);
+	printf("Height before = %d\n",sDataSpace->pCodecCtx->height);
+	printf("Width after = %d\n",sDataSpace->new_width);
+	printf("Height after = %d\n",sDataSpace->new_height);
+
+	sDataSpace->bufferSize = *(int *)encodedBuffer;
+	printf("Size of encoded buffer = %d\n",sDataSpace->bufferSize);
+	sDataSpace->extra = sizeof(int) + sizeof(int64_t) + sizeof(int64_t);
+
+	sDataSpace->packet.flags = *((int *)(encodedBuffer + sizeof(int)));
+	sDataSpace->packet.pts = *((int64_t *)(encodedBuffer + sizeof(int) + sizeof(int)));
+	sDataSpace->packet.dts = *((int64_t *)(encodedBuffer + sizeof(int) + sizeof(int) + sizeof(int64_t)));
+	sDataSpace->packet.data = encodedBuffer + sizeof(int) + sizeof(int) + sizeof(int64_t) + sizeof(int64_t);
+	sDataSpace->packet.size = sDataSpace->bufferSize - sDataSpace->extra;
+
+	sDataSpace->len = avcodec_decode_video2(sDataSpace->pCodecCtx, sDataSpace->pic, &sDataSpace->frameFinished, &sDataSpace->packet);
+	printf("Status of avcodec = %d\n",sDataSpace->len);
+	if(sDataSpace->len < 0)
+	{
+		return DSS_ERROR;
+	}
+
+#if 1
+	//Testing
+	sDataSpace->fileLen = sDataSpace->pCodecCtx->width * sDataSpace->pCodecCtx->height * sizeof(int);	// Multiply by 4 because of int type convertion  from char
+	printf("File length = %d\n",sDataSpace->fileLen);
+
+	if (*((INT32 *)decodedBuffer) < sDataSpace->fileLen + sizeof(int) + sizeof(int)){
+		*((INT32 *)decodedBuffer) = sDataSpace->pCodecCtx->width * sDataSpace->pCodecCtx->height;
+		printf("Returning INSUFFICIENT MEMORY: SIZE REQUIRED - %d \n", sDataSpace->pCodecCtx->width * sDataSpace->pCodecCtx->height);
+		return DSS_INSUFICIENT_MEMORY;
+	}
+
+	*(decodedBuffer + sizeof(char)) = sDataSpace->new_width;
+	printf("Width in c = %d\n", *(decodedBuffer + sizeof(char)));
+
+	*(decodedBuffer + sizeof(char) + sizeof(char)) = sDataSpace->new_height;
+	printf("Height in c = %d\n", *(decodedBuffer + sizeof(char) + sizeof(char)));
+
+	sws_scale(sDataSpace->img_convert_ctx, sDataSpace->pic->data, sDataSpace->pic->linesize, 0, sDataSpace->pCodecCtx->height, sDataSpace->picrgb->data, sDataSpace->picrgb->linesize);
+
+	sDataSpace->count = 3;//sizeof(char) + sizeof(char) + sizeof(char);
+	//writing data
+
+	for(sDataSpace->h_index = 0; sDataSpace->h_index < sDataSpace->new_height; sDataSpace->h_index++)
+	{
+		//		unsigned char RGB[3];
+		for(sDataSpace->w_index = 1; sDataSpace->w_index <= sDataSpace->new_width * 3; sDataSpace->w_index++)
+		{
+			sDataSpace->data = (sDataSpace->picrgb->data[0] + sDataSpace->h_index * sDataSpace->picrgb->linesize[0])[sDataSpace->w_index - 1];
+			sDataSpace->RGB[(sDataSpace->w_index - 1) % 3] = sDataSpace->data;
+
+			if(sDataSpace->w_index % 3 == 0) {
+				// i have got RGB values
+				//now all we need to do is put into the buffer in correct format
+				sDataSpace->rgbData = 0;
+				sDataSpace->alpha = 255;
+				//RGB -> 0:red  1:green  2:blue
+				sDataSpace->rgbData = (sDataSpace->alpha << 24) | (sDataSpace->RGB[0] << 16) | (sDataSpace->RGB[1] << 8) | (sDataSpace->RGB[2] << 0);
+
+				decodedBuffer[sDataSpace->count++] = sDataSpace->rgbData;
+			}
+		}
+	}
+
+	//printf("Width before = %d\n",sDataSpace->pCodecCtx->width);
+	//printf("Height before = %d\n",sDataSpace->pCodecCtx->height);
+	//	printf("Width after = %d\n",sDataSpace->new_width);
+	//	printf("Height after = %d\n",sDataSpace->new_height);
+
+#endif
+
+#if 0
+	FILE *fp;
+	static int c = 0;
+	sprintf(sDataSpace->fname, "result_from_c_%d.jpeg", c++);
+	fp = fopen(sDataSpace->fname, "wb");
+	if(fp)
+	{
+		//sws_scale(sDataSpace->img_convert_ctx, sDataSpace->pic->data, sDataSpace->pic->linesize, 0, sDataSpace->pCodecCtx->height, sDataSpace->picrgb->data, sDataSpace->picrgb->linesize);
+		//fprintf(fp,"P6\n%d %d\n%d\n",sDataSpace->pCodecCtx->width,sDataSpace->pCodecCtx->height,255);
+
+		for(int i=0;i<sDataSpace->pCodecCtx->height;i++) {
+			fwrite(sDataSpace->picrgb->data[0] + i * sDataSpace->picrgb->linesize[0], 1, sDataSpace->pCodecCtx->width * 3, fp);
+		}
+		fclose(fp);
+	}
+	else
+	{
+		printf("Error opening file\n");
+		exit(1);
+	}
+#endif
+
+	av_packet_unref(&sDataSpace->packet);
+	av_free(sDataSpace->packet.data);
+	av_free_packet(&sDataSpace->packet);
+	av_init_packet(&sDataSpace->packet);
+
+	return DSS_SUCCESS;
+}
+
+ErrorTypes RemoveDecoder(UINT8 *dataSpace)
+{
+	pthread_mutex_lock(&ml);
+	DecodeDataSpace *sDataSpace = (DecodeDataSpace *)(*((UINT64 *)dataSpace + sizeof(char)));
+	pthread_mutex_unlock(&ml);
+
+	//Encoding
+	avcodec_close(sDataSpace->pCodecCtx);
+	av_free(sDataSpace->pCodecCtx);
+	av_freep(&sDataSpace->pic->data[0]);
+	avcodec_free_context(&sDataSpace->pCodecCtx);
+
+
+	av_frame_unref(sDataSpace->pic);
+	av_frame_free(&sDataSpace->pic);
+	av_frame_unref(sDataSpace->picrgb);
+	av_frame_free(&sDataSpace->picrgb);
+	free(sDataSpace->picture_buf);
+	free(sDataSpace->picture_buf2);
+
+	avcodec_free_context(&sDataSpace->pCodecCtx);
+	sDataSpace->pCodecCtx = NULL;
+
+	sws_freeContext(sDataSpace->img_convert_ctx);
+	sDataSpace->img_convert_ctx = NULL;
+
+	delete(sDataSpace);
+	sDataSpace = NULL;
+
+	return DSS_SUCCESS;
+}
+
+//void *Test(void *arg)
+//{
+//	if (pthread_mutex_init(&ml, NULL) != 0){
+//		printf("\n mutex init has failed\n");
+//		return NULL;
+//	}
+//
+//	//StreamDataSpace *sDataSpace;
+//	Data *d = (Data *)arg;
+//
+//	d->count = 1;
+//	while(true)
+//	{
+//		if(d->count == 1)
+//		{
+//			AddStream(d->buffer, d->model, d->url, d->user, d->pass, d->camId);
+//			d->count++;
+//		}
+//
+//		int x = GetContent(d->buffer, d->dataBuffer);
+//		printf("\nReturn Status = %d\n",x);
+//	}
+//	pthread_mutex_destroy(&ml);
+//	return NULL;
+//}
+
+ErrorTypes Decode(const CHAR8 mediaType, const CHAR8 colorSpace,
+		UINT8 *encodedBuffer, UINT32 *decodedBuffer)
+{
+	return DSS_SUCCESS;
+}
+
+ErrorTypes addEncoder(UINT8 *dataSpace, const CHAR8 codec, const CHAR8 colorSpace,
+		const UINT32 width, const UINT32 height, const UINT32 bitRate)
+{
+	/*	if (*((INT32 *)dataSpace) < (INT32)sizeof(DecodeDataSpace *)){
+	 *((INT32 *)dataSpace) = sizeof(DecodeDataSpace *);
+			return DSS_INSUFICIENT_MEMORY;
+		}
+		//printf("I am in add encode\n");
+		pthread_mutex_lock(&ml);
+		DecodeDataSpace *sDataSpace = (DecodeDataSpace *)(*((UINT64 *)dataSpace + sizeof(char)));
+		pthread_mutex_unlock(&ml);
+
+		sDataSpace->pCodec_Encode = avcodec_find_encoder(AV_CODEC_ID_MJPEG);
+		if (!sDataSpace->pCodec_Encode)
+		{
+			printf("Codec not found\n");
+			exit(1);
+		}
+		//printf("I am in add encode twice\n");
+		sDataSpace->pCodecCtx_Encode = avcodec_alloc_context3(sDataSpace->pCodec_Encode);
+		if (!sDataSpace->pCodecCtx_Encode)
+		{
+			printf("Could not allocate video codec context\n");
+			exit(1);
+		}
+
+		sDataSpace->pCodecCtx_Encode->bit_rate = 400000;
+		sDataSpace->pCodecCtx_Encode->width = 640;
+		sDataSpace->pCodecCtx_Encode->height = 480;
+		//sDataSpace->new_width = WIDTH;
+		//sDataSpace->new_height = HEIGHT;
+		sDataSpace->pCodecCtx_Encode->time_base= (AVRational){1,25};
+		sDataSpace->pCodecCtx_Encode->pix_fmt = AV_PIX_FMT_YUVJ420P;
+		//printf("aackld\n");
+		if(avcodec_open2(sDataSpace->pCodecCtx_Encode, sDataSpace->pCodec_Encode, NULL) < 0)
+		{
+			printf("Could not open codec\n");
+			exit(1);
+		}
+		//printf("Hweeleoewf\n");
+		sDataSpace->pic_Encode = av_frame_alloc();
+		if (!sDataSpace->pic_Encode)
+		{
+			printf("Could not allocate video frame\n");
+			exit(1);
+		}
+		//printf("Result\n");
+		sDataSpace->pic_Encode->format = sDataSpace->pCodecCtx_Encode->pix_fmt;
+		sDataSpace->pic_Encode->width  = 640;//sDataSpace->pCodecCtx_Encode->width;
+		sDataSpace->pic_Encode->height = 480;//sDataSpace->pCodecCtx_Encode->height;
+
+		//
+		//	sDataSpace->img_convert_ctx = sws_getContext(sDataSpace->pCodecCtx->width, sDataSpace->pCodecCtx->height, sDataSpace->pCodecCtx->pix_fmt, sDataSpace->new_width, sDataSpace->new_height,
+		//			AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
+		//
+		sDataSpace->size_Encode = avpicture_get_size(AV_PIX_FMT_YUVJ420P, sDataSpace->pCodecCtx_Encode->width, sDataSpace->pCodecCtx_Encode->height);
+		sDataSpace->picture_buf_Encode = (uint8_t*)(av_malloc(sDataSpace->size_Encode));
+
+		sDataSpace->pic_Encode = av_frame_alloc();
+		//sDataSpace->picrgb = av_frame_alloc();
+
+		//sDataSpace->size2 = avpicture_get_size(AV_PIX_FMT_RGB24, sDataSpace->new_width, sDataSpace->new_height);
+		//sDataSpace->picture_buf2 = (uint8_t*)(av_malloc(sDataSpace->size2));
+
+		avpicture_fill((AVPicture *) sDataSpace->pic_Encode, sDataSpace->picture_buf_Encode, AV_PIX_FMT_YUVJ420P, sDataSpace->pCodecCtx_Encode->width, sDataSpace->pCodecCtx_Encode->height);
+		//avpicture_fill((AVPicture *) sDataSpace->picrgb, sDataSpace->picture_buf2, AV_PIX_FMT_RGB24, sDataSpace->new_width, sDataSpace->new_height);
+
+		av_init_packet(&sDataSpace->packet_E);
+
+		//*((UINT64 *)dataSpace + sizeof(char)) = (UINT64)sDataSpace;*/
+
+	return DSS_SUCCESS;
+}
+
+ErrorTypes removeEncoder(UINT8 *dataSpace)
+{
+	/*	pthread_mutex_lock(&ml);
+		DecodeDataSpace *sDataSpace = (DecodeDataSpace *)(*((UINT64 *)dataSpace + sizeof(char)));
+		pthread_mutex_unlock(&ml);
+
+		//Encoding
+		avcodec_close(sDataSpace->pCodecCtx);
+		av_free(sDataSpace->pCodecCtx);
+		av_freep(&sDataSpace->pic->data[0]);
+		avcodec_free_context(&sDataSpace->pCodecCtx);
+
+
+		av_frame_unref(sDataSpace->pic);
+		av_frame_free(&sDataSpace->pic);
+		av_frame_unref(sDataSpace->picrgb);
+		av_frame_free(&sDataSpace->picrgb);
+		free(sDataSpace->picture_buf);
+		free(sDataSpace->picture_buf2);
+
+		avcodec_free_context(&sDataSpace->pCodecCtx);
+		sDataSpace->pCodecCtx = NULL;
+
+		sws_freeContext(sDataSpace->img_convert_ctx);
+		sDataSpace->img_convert_ctx = NULL;
+
+		delete(sDataSpace);
+		sDataSpace = NULL;*/
+	return DSS_SUCCESS;
+}
+
+ErrorTypes encode(UINT8 *dataSpace, UINT8 *encodedBuffer, UINT32 *decodedBuffer)
+{
+	/*	pthread_mutex_lock(&ml);
+		DecodeDataSpace *sDataSpace = (DecodeDataSpace *)(*((UINT64 *)dataSpace + sizeof(char)));
+		pthread_mutex_unlock(&ml);
+
+//		sDataSpace->bufferSizeEncode = *(int *)encodedBuffer;
+//		printf("Size of encoded buffer in encode= %d\n",sDataSpace->bufferSizeEncode);
+//		sDataSpace->extra = sizeof(int) + sizeof(int64_t) + sizeof(int64_t);
+//
+//		sDataSpace->packet.flags = *((int *)(encodedBuffer + sizeof(int)));
+//		sDataSpace->packet.pts = *((int64_t *)(encodedBuffer + sizeof(int) + sizeof(int)));
+//		sDataSpace->packet.dts = *((int64_t *)(encodedBuffer + sizeof(int) + sizeof(int) + sizeof(int64_t)));
+//		sDataSpace->packet.data = encodedBuffer + sizeof(int) + sizeof(int) + sizeof(int64_t) + sizeof(int64_t);
+//		sDataSpace->packet.size = sDataSpace->bufferSizeEncode - sDataSpace->extra;
+//
+//		sDataSpace->len = avcodec_decode_video2(sDataSpace->pCodecCtx, sDataSpace->pic, &sDataSpace->frameFinished, &sDataSpace->packet);
+//		printf("Status of avcodec in encode= %d\n",sDataSpace->len);
+//
+//		//	sDataSpace->packet.flags|=AVFMT_NOFILE|AVFMT_FLAG_IGNIDX;
+//		//	sDataSpace->packet.flags&=~AVFMT_FLAG_GENPTS;
+//
+//		//printf("Format = %d\n",sDataSpace->pCodecCtx->pix_fmt);
+//		if(sDataSpace->len < 0)
+//		{
+//			return DSS_ERROR;
+//		}
+//
+//	#if 1
+//		//Testing
+//		sDataSpace->fileLen = sDataSpace->pCodecCtx->width * sDataSpace->pCodecCtx->height * sizeof(int);	// Multiply by 4 because of int type convertion  from char
+//		printf("File length = %d\n",sDataSpace->fileLen);
+//
+//		if (*((INT32 *)decodedBuffer) < sDataSpace->fileLen + sizeof(int) + sizeof(int)){
+//			*((INT32 *)decodedBuffer) = sDataSpace->pCodecCtx->width * sDataSpace->pCodecCtx->height;
+//			printf("Returning INSUFFICIENT MEMORY: SIZE REQUIRED - %d \n", sDataSpace->pCodecCtx->width * sDataSpace->pCodecCtx->height);
+//			return DSS_INSUFICIENT_MEMORY;
+//		}
+//
+//		*(decodedBuffer + sizeof(char)) = sDataSpace->new_width;
+//		printf("Width in c = %d\n", *(decodedBuffer + sizeof(char)));
+//
+//		*(decodedBuffer + sizeof(char) + sizeof(char)) = sDataSpace->new_height;
+//		printf("Height in c = %d\n", *(decodedBuffer + sizeof(char) + sizeof(char)));
+//
+//		sws_scale(sDataSpace->img_convert_ctx, sDataSpace->pic->data, sDataSpace->pic->linesize, 0, sDataSpace->pCodecCtx->height, sDataSpace->picrgb->data, sDataSpace->picrgb->linesize);
+
+		//Encoding
+		 prepare a dummy image
+		 Y
+		for(int y=0;y<sDataSpace->pCodecCtx_Encode->height;y++) {
+			for(int x=0;x<sDataSpace->pCodecCtx_Encode->width;x++) {
+				sDataSpace->pic_Encode->data[0][y * sDataSpace->pic_Encode->linesize[0] + x] = x + y;
+			}
+		}
+
+		 Cb and Cr
+		for(int y=0;y<sDataSpace->pCodecCtx_Encode->height/2;y++) {
+			for(int x=0;x<sDataSpace->pCodecCtx_Encode->width/2;x++) {
+				sDataSpace->pic_Encode->data[1][y * sDataSpace->pic_Encode->linesize[1] + x] = 128 + y;
+				sDataSpace->pic_Encode->data[2][y * sDataSpace->pic_Encode->linesize[2] + x] = 64 + x;
+			}
+		}
+
+		sDataSpace->pic_Encode->pts = 1;
+		//int got_output = 0;
+
+		sDataSpace->len = avcodec_encode_video2(sDataSpace->pCodecCtx_Encode, &sDataSpace->packet_E, sDataSpace->pic_Encode, &sDataSpace->got_output);
+		if (sDataSpace->len_E < 0)
+		{
+			printf("Error encoding frame\n");
+			exit(1);
+		}
+
+		if (sDataSpace->got_output)
+		{
+			printf("got frame\n");
+			static int c = 0;
+			sprintf(sDataSpace->fname, "result_from_c_%d.jpg", c++);
+			FILE* f = fopen(sDataSpace->fname, "wb");
+			if(f)
+				fwrite(sDataSpace->packet_E.data, 1, sDataSpace->packet_E.size, f);
+			else
+				exit(1);
+			fclose(f);
+			//av_free_packet(&sDataSpace->packet);
+		}
+		//printf("Sfas cfs \n");
+		//exit(1);
+//		sDataSpace->count = 3;//sizeof(char) + sizeof(char) + sizeof(char);
+//		//writing data
+//
+//		for(sDataSpace->h_index = 0; sDataSpace->h_index < sDataSpace->new_height; sDataSpace->h_index++)
+//		{
+//			//		unsigned char RGB[3];
+//			for(sDataSpace->w_index = 1; sDataSpace->w_index <= sDataSpace->new_width * 3; sDataSpace->w_index++)
+//			{
+//				sDataSpace->data = (sDataSpace->picrgb->data[0] + sDataSpace->h_index * sDataSpace->picrgb->linesize[0])[sDataSpace->w_index - 1];
+//				sDataSpace->RGB[(sDataSpace->w_index - 1) % 3] = sDataSpace->data;
+//
+//				if(sDataSpace->w_index % 3 == 0) {
+//					// i have got RGB values
+//					//now all we need to do is put into the buffer in correct format
+//					sDataSpace->rgbData = 0;
+//					sDataSpace->alpha = 255;
+//					//RGB -> 0:red  1:green  2:blue
+//					sDataSpace->rgbData = (sDataSpace->alpha << 24) | (sDataSpace->RGB[0] << 16) | (sDataSpace->RGB[1] << 8) | (sDataSpace->RGB[2] << 0);
+//
+//					decodedBuffer[sDataSpace->count++] = sDataSpace->rgbData;
+//				}
+//			}
+//		}
+//
+//		printf("Width before = %d\n",sDataSpace->pCodecCtx->width);
+//		printf("Height before = %d\n",sDataSpace->pCodecCtx->height);
+//		printf("Width after = %d\n",sDataSpace->new_width);
+//		printf("Height after = %d\n",sDataSpace->new_height);
+
+	//#endif
+
+	#if 0
+		FILE *fp;
+		static int c = 0;
+		sprintf(sDataSpace->fname, "result_from_c_%d.jpeg", c++);
+		fp = fopen(sDataSpace->fname, "wb");
+		if(fp)
+		{
+			//sws_scale(sDataSpace->img_convert_ctx, sDataSpace->pic->data, sDataSpace->pic->linesize, 0, sDataSpace->pCodecCtx->height, sDataSpace->picrgb->data, sDataSpace->picrgb->linesize);
+			//fprintf(fp,"P6\n%d %d\n%d\n",sDataSpace->pCodecCtx->width,sDataSpace->pCodecCtx->height,255);
+
+			for(int i=0;i<sDataSpace->pCodecCtx->height;i++) {
+				fwrite(sDataSpace->picrgb->data[0] + i * sDataSpace->picrgb->linesize[0], 1, sDataSpace->pCodecCtx->width * 3, fp);
+			}
+			fclose(fp);
+		}
+		else
+		{
+			printf("Error opening file\n");
+			exit(1);
+		}
+	#endif
+
+		av_packet_unref(&sDataSpace->packet_E);
+		av_free(sDataSpace->packet_E.data);
+		av_free_packet(&sDataSpace->packet_E);
+		av_init_packet(&sDataSpace->packet_E);*/
+
+	return DSS_SUCCESS;
+}
+
+ErrorTypes TearDown()
+{
+	//TO DO: close RTSP stream here
+	delete (DecodeDataSpace *)globalDataSpace_d;
+	if ( NULL != globalDataSpace_d )
+	{
+		return DSS_ERROR;
+	}
+
+	return DSS_SUCCESS;
+}
+
+

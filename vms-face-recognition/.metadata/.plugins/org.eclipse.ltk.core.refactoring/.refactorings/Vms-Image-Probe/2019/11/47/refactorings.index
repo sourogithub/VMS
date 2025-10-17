@@ -1,0 +1,6 @@
+1574054161438	Rename method 'setCallback'
+1574054186815	Rename type 'ExecutorCallback'
+1574054938973	Rename field 'startAnalyticRequested'
+1574055009264	Rename field 'analyticRequest'
+1574055063648	Rename field 'FRAME_SEARCH_DELAY'
+1574060604850	Rename local variable 'linkedBlockingDeque'

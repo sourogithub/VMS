@@ -1,0 +1,14 @@
+Source: vms
+Section: admin
+Priority: optional
+Maintainer: Sibendu <sibendu.d@divsoftsolutions.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.2
+Homepage: http://divsoftsolutions.com/
+#Vcs-Git: https://anonscm.debian.org/git/collab-maint/vms.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/vms.git
+Package: vms
+Version: 0.0.1
+Architecture: all
+Depends: apache2, vlc, openjdk-11-jdk | openjdk-11-jre, ffmpeg, ssh
+Description: Video Management System  application with  embedded servers for remote video streaming 

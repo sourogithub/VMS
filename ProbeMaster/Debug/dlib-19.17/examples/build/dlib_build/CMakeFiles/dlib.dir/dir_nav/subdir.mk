@@ -1,0 +1,13 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+O_SRCS += \
+../dlib-19.17/examples/build/dlib_build/CMakeFiles/dlib.dir/dir_nav/dir_nav_extensions.cpp.o \
+../dlib-19.17/examples/build/dlib_build/CMakeFiles/dlib.dir/dir_nav/dir_nav_kernel_1.cpp.o \
+../dlib-19.17/examples/build/dlib_build/CMakeFiles/dlib.dir/dir_nav/dir_nav_kernel_2.cpp.o 
+
+
+# Each subdirectory must supply rules for building sources it contributes
+

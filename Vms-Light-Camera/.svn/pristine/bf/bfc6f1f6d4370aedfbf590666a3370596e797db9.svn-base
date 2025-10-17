@@ -1,0 +1,35 @@
+#!/bin/sh
+# postinst script for vms
+#
+# see: dh_installdeb(1)
+
+set -e
+
+echo "Setting up vms service..."
+chmod +x /usr/bin/vms/entry.sh
+/bin/sh /usr/bin/vms/entry.sh
+echo "Vms Setup complete"
+
+if(false) then
+	echo "Please restart the system for the changes to take actions.."
+	while :
+	do
+	read -p "Reboot system now? (y/n)" input
+	case $input in
+		y)
+	  	  sudo reboot
+		  ;;
+	
+		n)
+		  break
+		  ;;
+
+	    	*)
+		  echo "please enter valid input.."
+		  continue
+		  ;;
+	esac
+	done
+fi
+
+exit 0

@@ -1,0 +1,28 @@
+1573361491474	Rename local variable 'images'
+1573361501589	Rename local variable 'data'
+1573362934280	Rename type 'CameraListPanel'
+1573363311832	Rename method 'updateTree'
+1573363713753	Delete element
+1573363722238	Delete element
+1573363798075	Rename method 'setEventGenerated'
+1573365915082	Rename field 'events'
+1573386980991	Rename field 'cameraViewPanel'
+1573386990167	Rename field 'cameraListPanel'
+1573469704185	Rename local variable 'height'
+1573555823221	Rename method 'getPersonAge'
+1573555986118	Rename field 'personAge'
+1573556387030	Delete elements
+1573556630262	Extract local variable 'displayText'
+1573558690883	Rename local variable 'age'
+1573562744685	Rename local variable 'dateofBirth'
+1573636975888	Rename local variable 'tooltipText'
+1573642816303	Rename type 'EventSearchRenderer'
+1573642836139	Rename field 'faceIcon'
+1573643104203	Rename field 'camera'
+1573643108486	Rename field 'cameraCollection'
+1573643691567	Delete element
+1573644408352	Move compilation units
+1573644662743	Rename local variable 'centerRenderer'
+1573645517097	Extract local variable 'font'
+1573647032218	Rename field 'image'
+1573647070720	Extract local variable 'bufferedImage'

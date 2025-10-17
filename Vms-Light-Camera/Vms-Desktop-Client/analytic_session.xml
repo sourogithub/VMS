@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.8.0_201" class="java.beans.XMLDecoder">
+ <object class="java.util.HashMap">
+  <void method="put">
+   <int>0</int>
+   <object class="java.util.HashMap">
+    <void method="put">
+     <object class="java.lang.Enum" method="valueOf">
+      <class>com.dss.vms.common.constants.AnalyticType</class>
+      <string>FACE</string>
+     </object>
+     <object class="com.dss.vms.common.data.AnalyticSession"/>
+    </void>
+    <void method="put">
+     <object class="java.lang.Enum" method="valueOf">
+      <class>com.dss.vms.common.constants.AnalyticType</class>
+      <string>INTRUDER</string>
+     </object>
+     <object class="com.dss.vms.common.data.AnalyticSession"/>
+    </void>
+   </object>
+  </void>
+ </object>
+</java>

@@ -1,0 +1,25 @@
+package com.dss.vms.common.constants;
+
+/**
+ * @author jdeveloper
+ */
+public interface CommonConstant {
+	long TIME_MS_IN_SEC = 1000L;
+	long TIME_SEC_IN_MIN = 60L;
+	long TIME_MIN_IN_HOUR = 60L;
+	long TIME_MS_IN_MIN = TIME_SEC_IN_MIN * TIME_MS_IN_SEC;
+	long TIME_MS_IN_HOUR = TIME_MIN_IN_HOUR * TIME_MS_IN_MIN;
+	int MAX_PARAMETER_PER_REGION = 4;
+
+	/* DO NOT CHNAGE THE SEQUENCE BELOW */
+	int DSSF_FLAG_LENGTH = 4;
+	int FRAME_SIZE_LENGTH = 4;
+	int TIME_STAMP_MILI_SEC_LENGTH = 8;
+	int TIME_STAMP_NANO_SEC_LENGTH = 4;
+	int START_POINTER_LENGTH = 8;
+	int MEDIA_TYPE_LENGTH = 1;
+	int FRAME_TYPE_LENGTH = 1;
+	int RESERVE_BYTE_LENGTH = 2;
+	/* DO NOT CHNAGE THE SEQUENCE ABOVE */
+
+}

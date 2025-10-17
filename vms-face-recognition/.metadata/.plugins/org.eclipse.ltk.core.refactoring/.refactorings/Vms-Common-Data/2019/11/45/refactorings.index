@@ -1,0 +1,16 @@
+1573303402576	Rename field 'TRAIN_DATASET'
+1573303908482	Rename type 'TrainingData'
+1573304430585	Rename method 'executeCommand'
+1573304459177	Rename method 'train'
+1573304971552	Rename type 'FaceTrainingData'
+1573306058279	Rename method 'execute'
+1573307368028	Rename method 'getEventLogBetween'
+1573307376759	Rename method 'getEventLogByType'
+1573307411178	Rename method 'getEvent'
+1573307434731	Rename method 'getLogBetween'
+1573307440976	Rename method 'getAuditLogByType'
+1573318314827	Move compilation unit
+1573318344512	Delete element
+1573318362149	Move compilation unit
+1573318377156	Rename type 'EmployeeData'
+1573318388657	Move compilation unit

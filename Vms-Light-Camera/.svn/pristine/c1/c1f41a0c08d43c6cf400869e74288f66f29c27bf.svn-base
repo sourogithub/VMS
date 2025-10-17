@@ -1,0 +1,195 @@
+package com.dss.vms.jni.interfaces;
+
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dss.vms.jni.interfaces.common.NativeLibrary;
+
+public class CodecMaster implements NativeLibrary {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(CodecMaster.class);
+	private static CodecMaster INSTANCE;
+	private static final String LIBRARY_NAME = "CodecMaster";
+
+	public static CodecMaster getInstance() {
+		if (INSTANCE == null) {
+			synchronized (CodecMaster.class) {
+				if (INSTANCE == null) {
+					INSTANCE = new CodecMaster();
+					int initReturn = INSTANCE.initialize();
+					if (initReturn == SUCCESS) {
+						LOGGER.info("Success to initialize [" + LIBRARY_NAME + "]...");
+					} else {
+						LOGGER.info("Failed to initialize [" + LIBRARY_NAME + "]...Native Error - " + initReturn);
+					}
+				}
+			}
+		}
+		return INSTANCE;
+	}
+
+	static {
+		try {
+			System.loadLibrary(LIBRARY_NAME);
+			LOGGER.info("Success to load native library [" + LIBRARY_NAME + "]...");
+		} catch (UnsatisfiedLinkError e) {
+			LOGGER.error("Failed to load native library [" + LIBRARY_NAME + "]...Error - " + e);
+		} catch (Exception e) {
+			LOGGER.error("Failed to load native library [" + LIBRARY_NAME + "]...Error - " + e);
+		}
+	}
+
+	/**
+	 * @return
+	 */
+	native int _initialize();
+
+	/**
+	 * @return
+	 */
+	native int _tearDown();
+
+	/**
+	 * @param mapingBiffer
+	 * @param mediaType
+	 * @param colorSpace
+	 * @return
+	 */
+	native int _addDecorder(ByteBuffer mapingBiffer, byte mediaType, byte colorSpace);
+
+	/**
+	 * @param mapingBiffer
+	 * @return
+	 */
+	native int _removeDecorder(ByteBuffer mapingBiffer);
+
+	/**
+	 * @param mapingBiffer
+	 * @param encodedByffer
+	 * @param decodedBuffer
+	 * @return
+	 */
+	native int _decode(ByteBuffer mapingBiffer, ByteBuffer encodedByffer, IntBuffer decodedBuffer);
+
+	/**
+	 * @param mediaType
+	 * @param colorSpace
+	 * @param encodedByffer
+	 * @param decodedBuffer
+	 * @return
+	 */
+	native int _decode(byte mediaType, byte colorSpace, ByteBuffer encodedByffer, IntBuffer decodedBuffer);
+
+	/**
+	 * @param mapingBiffer
+	 * @param codec
+	 * @param colorSpace
+	 * @param width
+	 * @param height
+	 * @param bitRate
+	 * @return
+	 */
+	native int _addEncoder(ByteBuffer mapingBiffer, byte codec, byte colorSpace, int width, int height, int bitRate);
+
+	/**
+	 * @param mapingBiffer
+	 * @return
+	 */
+	native int _removeEncoder(ByteBuffer mapingBiffer);
+
+	/**
+	 * @param mapingBiffer
+	 * @param encodedBuffer
+	 * @param decodedBuffer
+	 * @return
+	 */
+	native int _encode(ByteBuffer mapingBiffer, ByteBuffer encodedBuffer, IntBuffer decodedBuffer);
+
+	@Override
+	public int initialize() {
+		return _initialize();
+	}
+
+	@Override
+	public int tearDown() {
+		return _tearDown();
+	}
+
+	@Override
+	protected void finalize() throws Throwable {
+		tearDown();
+	}
+
+	/**
+	 * @param mapingBiffer
+	 * @param mediaType
+	 * @param colorSpace
+	 * @return
+	 */
+	public int addDecorder(ByteBuffer mapingBiffer, byte mediaType, byte colorSpace) {
+		return _addDecorder(mapingBiffer, mediaType, colorSpace);
+	}
+
+	/**
+	 * @param mapingBiffer
+	 * @return
+	 */
+	public int removeDecorder(ByteBuffer mapingBiffer) {
+		return _removeDecorder(mapingBiffer);
+	}
+
+	/**
+	 * @param mapingBiffer
+	 * @param encodedByffer
+	 * @param decodedBuffer
+	 * @return
+	 */
+	public int decode(ByteBuffer mapingBiffer, ByteBuffer encodedByffer, IntBuffer decodedBuffer) {
+		return _decode(mapingBiffer, encodedByffer, decodedBuffer);
+	}
+
+	/**
+	 * @param mediaType
+	 * @param colorSpace
+	 * @param encodedByffer
+	 * @param decodedBuffer
+	 * @return
+	 */
+	public int decode(byte mediaType, byte colorSpace, ByteBuffer encodedByffer, IntBuffer decodedBuffer) {
+		return _decode(mediaType, colorSpace, encodedByffer, decodedBuffer);
+	}
+
+	/**
+	 * @param mapingBiffer
+	 * @param codec
+	 * @param colorSpace
+	 * @param width
+	 * @param height
+	 * @param bitRate
+	 * @return
+	 */
+	public int addEncoder(ByteBuffer mapingBiffer, byte codec, byte colorSpace, int width, int height, int bitRate) {
+		return _addEncoder(mapingBiffer, codec, colorSpace, width, height, bitRate);
+	}
+
+	/**
+	 * @param mapingBiffer
+	 * @return
+	 */
+	public int removeEncoder(ByteBuffer mapingBiffer) {
+		return removeEncoder(mapingBiffer);
+	}
+
+	/**
+	 * @param mapingBiffer
+	 * @param encodedBuffer
+	 * @param decodedBuffer
+	 * @return
+	 */
+	public int encode(ByteBuffer mapingBiffer, ByteBuffer encodedBuffer, IntBuffer decodedBuffer) {
+		return encode(mapingBiffer, encodedBuffer, decodedBuffer);
+	}
+}

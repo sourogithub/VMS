@@ -1,0 +1,35 @@
+/*
+ * StreamMaster.h
+ *
+ *  Created on: 06-Oct-2018
+ *      Author: dss-06
+ */
+
+#ifndef INCLUDE_STREAMMASTER_H_
+#define INCLUDE_STREAMMASTER_H_
+
+#include "DataTypes.h"
+#include "ErrorTypes.h"
+
+ErrorTypes Initialize();
+
+ErrorTypes TearDown();
+
+UINT32 createFolder(char *);
+
+void *Test(void *arg);
+
+//ErrorTypes Stream(void *arg);
+
+ErrorTypes AddStream(UINT8 *dataSpace, const CHAR8 *cameraModel,
+		const CHAR8 *cameraURL, const CHAR8 *userId, const CHAR8 *pass, UINT32 camId);
+
+ErrorTypes RemoveStream(UINT8 *dataSpace);
+
+ErrorTypes GetContent(UINT8 *dataSpace, UINT8 *contentBuff);
+
+ErrorTypes PauseStream(UINT8 *dataSpace);
+
+ErrorTypes ResumeStream(UINT8 *dataSpace);
+
+#endif /* INCLUDE_STREAMMASTER_H_ */

@@ -1,0 +1,8 @@
+SW201805 Basab_Mallick Male 21_March_1994
+SW201902 Diptyajit_Mitra Male 29_May_1994
+SW201901 Moumita_Biswas Female 08_Dec_12_1989
+SW201810 Murad_Ali Male 19_May_1994 
+SW201804 Sambhuti_Pathak Male 03_Oct_1991   
+SW201808 Shilpa_Kapas female 21_Dec_1996
+SW201809 Sibendu_Das Male 27_Feb_1995
+

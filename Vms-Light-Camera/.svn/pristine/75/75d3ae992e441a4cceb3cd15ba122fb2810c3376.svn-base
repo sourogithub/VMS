@@ -1,0 +1,12 @@
+#!/bin/sh
+# prerm script for vms
+#
+# see: dh_installdeb(1)
+
+set -e
+chmod +x /usr/bin/vms/exit.sh
+/bin/sh /usr/bin/vms/exit.sh
+
+#DEBHELPER#
+
+exit 0
